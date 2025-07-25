@@ -17,18 +17,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (firebaseUser) {
         const firestoreUser = await getUserFromFirestore(firebaseUser.uid);
         if (firestoreUser) {
-          setUser({
+          const userData = {
             uid: firebaseUser.uid,
             email: firebaseUser.email!,
             name: firestoreUser.name,
             role: firestoreUser.role,
-          });
-          // Redirect based on role
-          if (window.location.pathname === '/login' || window.location.pathname === '/register' || window.location.pathname === '/') {
-             router.push(firestoreUser.role === 'seller' ? '/seller' : '/buyer');
+          };
+          setUser(userData);
+           // Redirect on initial load if user is already logged in
+          if (['/login', '/register', '/'].includes(window.location.pathname)) {
+            router.push(firestoreUser.role === 'seller' ? '/seller' : '/buyer');
           }
         } else {
-          // If user exists in Auth but not Firestore (e.g., manual deletion), log them out.
           await signOut(auth);
           setUser(null);
         }
@@ -41,15 +41,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [router]);
 
-  const login = (email: string, pass: string): Promise<UserCredential> => {
+  const login = async (email: string, pass: string): Promise<UserCredential> => {
     setLoading(true);
-    return signInWithEmailAndPassword(auth, email, pass);
+    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+    const firestoreUser = await getUserFromFirestore(userCredential.user.uid);
+    if (firestoreUser) {
+        router.push(firestoreUser.role === 'seller' ? '/seller' : '/buyer');
+    } else {
+        // This case is unlikely if registration is working, but good to handle
+        await signOut(auth);
+        throw new Error("User data not found in database.");
+    }
+    return userCredential;
   };
 
   const register = async (email: string, pass: string, name: string, role: 'buyer' | 'seller'): Promise<UserCredential> => {
     setLoading(true);
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     await addUserToFirestore(userCredential.user.uid, name, email, role);
+    // The onAuthStateChanged listener will handle the redirect for new registrations
     return userCredential;
   };
 

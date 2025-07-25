@@ -41,7 +41,7 @@ export default function LoginPage() {
           title: 'Login Successful',
           description: "Welcome back!",
         });
-        // The redirect is handled by the AuthProvider now
+        // The redirect is now handled by the login function in AuthProvider
       }
     } catch (error: any) {
       console.error(error);
@@ -59,12 +59,12 @@ export default function LoginPage() {
     }
   }
 
-  // If user is already logged in, redirect them
-  React.useEffect(() => {
-    if (user) {
-      router.push(user.role === 'seller' ? '/seller' : '/buyer');
-    }
-  }, [user, router]);
+  // This effect can be removed as AuthProvider now handles redirects
+  // React.useEffect(() => {
+  //   if (user) {
+  //     router.push(user.role === 'seller' ? '/seller' : '/buyer');
+  //   }
+  // }, [user, router]);
 
 
   return (
