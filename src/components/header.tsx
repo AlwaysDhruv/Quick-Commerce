@@ -30,17 +30,6 @@ export function Header() {
           )}
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-4">
-          <Button asChild variant="ghost" className="relative h-9 w-9">
-            <Link href="/cart">
-              <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 && (
-                <Badge variant="default" className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-accent p-0 text-accent-foreground">
-                  {cartCount}
-                </Badge>
-              )}
-              <span className="sr-only">Shopping Cart</span>
-            </Link>
-          </Button>
           <UserNav />
         </div>
       </div>
