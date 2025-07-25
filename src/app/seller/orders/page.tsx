@@ -88,9 +88,9 @@ function OrderRow({ order, onOrderDeleted }: { order: Order; onOrderDeleted: () 
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-     <Collapsible asChild key={order.id} open={isOpen} onOpenChange={setIsOpen}>
+    <Collapsible asChild key={order.id} open={isOpen} onOpenChange={setIsOpen}>
       <>
-        <TableRow className="cursor-pointer">
+        <TableRow>
           <TableCell className="font-medium">...{order.id.slice(-6)}</TableCell>
           <TableCell>{order.buyerName}</TableCell>
           <TableCell>{format(order.createdAt.toDate(), 'PPP')}</TableCell>
