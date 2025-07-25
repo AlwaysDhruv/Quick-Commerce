@@ -1,13 +1,16 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
-import { getOrdersBySeller, getProductsBySeller, getBuyerCountFromFirestore, addProductToFirestore } from '@/lib/firestore';
-import { DollarSign, Package, ShoppingCart, Users, Loader2, Database } from 'lucide-react';
+import { getOrdersBySeller, getProductsBySeller, getBuyerCountFromFirestore, addProductToFirestore, type Order } from '@/lib/firestore';
+import { DollarSign, Package, ShoppingCart, Users, Loader2, Database, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { format } from 'date-fns';
 
 const sampleProducts = [
     {
@@ -192,10 +195,77 @@ const sampleProducts = [
     }
   ];
 
+function SalesChart({ orders }: { orders: Order[] }) {
+  const chartData = useMemo(() => {
+    if (!orders || orders.length === 0) return [];
+    
+    // Aggregate sales by month
+    const monthlySales = orders.reduce((acc, order) => {
+      const month = format(order.createdAt.toDate(), 'MMM yyyy');
+      acc[month] = (acc[month] || 0) + order.total;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Get the last 6 months including the current one
+    const sortedMonths = Object.keys(monthlySales).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    
+    return sortedMonths.slice(-6).map(month => ({
+      name: month,
+      total: monthlySales[month],
+    }));
+  }, [orders]);
+
+  if (chartData.length === 0) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><TrendingUp className="text-accent" /> Sales Over Time</CardTitle>
+            </CardHeader>
+            <CardContent className="h-[350px] flex items-center justify-center">
+                <p className="text-muted-foreground">No sales data yet. Once you get orders, your sales chart will appear here.</p>
+            </CardContent>
+        </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><TrendingUp className="text-accent" /> Sales Over Time</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer
+            config={{ total: { label: 'Sales', color: 'hsl(var(--primary))' } }}
+            className="h-[300px] w-full"
+        >
+          <BarChart accessibilityLayer data={chartData}>
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="name"
+              tickLine={false}
+              tickMargin={10}
+              axisLine={false}
+            />
+            <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `$${value}`}
+             />
+            <ChartTooltip
+              content={<ChartTooltipContent />}
+            />
+            <Bar dataKey="total" fill="var(--color-total)" radius={4} />
+          </BarChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SellerDashboard() {
   const { user } = useAuth();
   const [productCount, setProductCount] = useState<number | null>(null);
-  const [orderCount, setOrderCount] = useState<number | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [totalRevenue, setTotalRevenue] = useState<number | null>(null);
   const [buyerCount, setBuyerCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -206,15 +276,15 @@ export default function SellerDashboard() {
     if (user) {
       setLoading(true);
       try {
-        const [products, orders, buyers] = await Promise.all([
+        const [products, fetchedOrders, buyers] = await Promise.all([
           getProductsBySeller(user.uid),
           getOrdersBySeller(user.uid),
           getBuyerCountFromFirestore(),
         ]);
 
         setProductCount(products.length);
-        setOrderCount(orders.length);
-        setTotalRevenue(orders.reduce((sum, order) => sum + order.total, 0));
+        setOrders(fetchedOrders);
+        setTotalRevenue(fetchedOrders.reduce((sum, order) => sum + order.total, 0));
         setBuyerCount(buyers);
 
       } catch (error) {
@@ -253,7 +323,6 @@ export default function SellerDashboard() {
         description: `${productsToAdd.length} new sample products have been added.`,
       });
 
-      // Refresh the data on the dashboard
       await fetchData();
 
     } catch (error) {
@@ -288,7 +357,7 @@ export default function SellerDashboard() {
   );
 
   return (
-    <div>
+    <div className="space-y-8">
       <div className="flex items-start justify-between">
         <div>
             <h1 className="text-3xl font-bold font-headline">Welcome, {user?.name}!</h1>
@@ -300,11 +369,15 @@ export default function SellerDashboard() {
         </Button>
       </div>
 
-      <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {renderStatCard('Total Revenue', totalRevenue !== null ? `$${totalRevenue.toLocaleString()}` : 'N/A', <DollarSign className="h-4 w-4 text-muted-foreground" />)}
-        {renderStatCard('Orders', orderCount !== null ? `+${orderCount}` : 'N/A', <ShoppingCart className="h-4 w-4 text-muted-foreground" />)}
+        {renderStatCard('Orders', orders ? `+${orders.length}` : 'N/A', <ShoppingCart className="h-4 w-4 text-muted-foreground" />)}
         {renderStatCard('Products', productCount !== null ? productCount : 'N/A', <Package className="h-4 w-4 text-muted-foreground" />, 'Total products listed')}
         {renderStatCard('Total Buyers', buyerCount !== null ? buyerCount : 'N/A', <Users className="h-4 w-4 text-muted-foreground" />, 'Total registered buyers')}
+      </div>
+
+      <div>
+        <SalesChart orders={orders} />
       </div>
     </div>
   );

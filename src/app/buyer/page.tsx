@@ -8,10 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { recommendProducts } from '@/ai/flows/recommend-products';
-import { Wand2, Loader2 } from 'lucide-react';
+import { Wand2, Loader2, ShoppingCart, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getProductsFromFirestore } from '@/lib/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useCart } from '@/hooks/use-cart';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 function AiRecommendations({ products }: { products: Product[] }) {
   const [preferences, setPreferences] = useState('');
@@ -55,7 +57,7 @@ function AiRecommendations({ products }: { products: Product[] }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-headline">
           <Wand2 className="text-accent" />
-          Personalized Recommendations
+          Find Your Next Favorite Thing
         </CardTitle>
         <CardDescription>Tell us what you&apos;re looking for, and our AI will find the perfect products for you.</CardDescription>
       </CardHeader>
@@ -87,6 +89,100 @@ function AiRecommendations({ products }: { products: Product[] }) {
   );
 }
 
+function CartRecommendations({ allProducts }: { allProducts: Product[] }) {
+  const { cart } = useCart();
+  const { toast } = useToast();
+  const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const productCatalog = allProducts.map(p => `${p.name}: ${p.description}`).join('\n');
+  const cartContents = cart.map(item => `${item.product.name} (Quantity: ${item.quantity})`).join(', ');
+
+  const findProductByName = (name: string) => {
+    return allProducts.find(p => p.name.toLowerCase() === name.toLowerCase());
+  };
+
+  const getRecommendations = async () => {
+    setIsLoading(true);
+    setRecommendedProducts([]);
+    try {
+      const result = await recommendProducts({
+        userPreferences: `Based on the items in my cart, which are: ${cartContents}. Please suggest 3 other products from the catalog that I might like.`,
+        productCatalog: productCatalog,
+      });
+
+      // The AI returns a string, so we need to parse it to find product names
+      const recommendationsText = result.recommendations;
+      const recommendedNames = recommendationsText.split('\n')
+        .map(line => line.replace(/^- /, '').trim())
+        .filter(name => name.length > 0);
+
+      const foundProducts = recommendedNames
+        .map(findProductByName)
+        .filter((p): p is Product => p !== undefined);
+
+      setRecommendedProducts(foundProducts);
+
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: 'Error',
+        description: 'Failed to get recommendations. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (cart.length > 0) {
+      getRecommendations();
+    } else {
+        setRecommendedProducts([]);
+    }
+  }, [cart]);
+
+
+  if (cart.length === 0 || recommendedProducts.length === 0) {
+    return null; // Don't show the component if cart is empty or no recommendations were found
+  }
+
+  return (
+      <div className="mt-12">
+        <h2 className="font-headline text-2xl font-bold flex items-center gap-2">
+            <Lightbulb className="text-accent"/>
+            Top Picks For You
+        </h2>
+        <p className="text-muted-foreground mb-6">Based on what's in your cart, you might also like these...</p>
+        {isLoading ? (
+             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="space-y-4">
+                        <Skeleton className="h-[250px] w-full" />
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-4 w-1/4" />
+                    </div>
+                ))}
+            </div>
+        ) : (
+            <Carousel opts={{ align: "start", loop: true }}>
+                <CarouselContent className="-ml-4">
+                {recommendedProducts.map((product) => (
+                    <CarouselItem key={product.id} className="md:basis-1/2 lg:basis-1/3 pl-4">
+                         <div className="p-1">
+                            <ProductCard product={product} />
+                         </div>
+                    </CarouselItem>
+                ))}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+            </Carousel>
+        )}
+      </div>
+  )
+}
 
 export default function BuyerPage() {
   const { user } = useAuth();
@@ -110,14 +206,14 @@ export default function BuyerPage() {
         <h1 className="font-headline text-3xl font-bold">Welcome, {user?.name || 'Shopper'}!</h1>
         <p className="text-muted-foreground">Discover our curated collection of fine products.</p>
       </div>
-      <div className="mt-8">
-        <AiRecommendations products={products} />
-      </div>
+      
+      <CartRecommendations allProducts={products} />
+
       <div className="mt-12">
         <h2 className="font-headline text-2xl font-bold">All Products</h2>
         {isLoading ? (
            <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-             {Array.from({ length: 4 }).map((_, i) => (
+             {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="space-y-4">
                     <Skeleton className="h-[250px] w-full" />
                     <Skeleton className="h-6 w-3/4" />
@@ -132,6 +228,10 @@ export default function BuyerPage() {
             ))}
           </div>
         )}
+      </div>
+
+       <div className="mt-12">
+        <AiRecommendations products={products} />
       </div>
     </div>
   );
