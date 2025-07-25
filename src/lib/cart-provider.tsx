@@ -10,45 +10,61 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   const addToCart = (product: Product, quantity: number = 1) => {
-    if (product.stock < quantity) {
-        toast({
-          title: "Out of Stock",
-          description: `Sorry, ${product.name} is currently unavailable.`,
-          variant: "destructive",
-        });
-        return;
-      }
+    // Check if product is out of stock first
+    if (product.stock <= 0) {
+      toast({
+        title: 'Out of Stock',
+        description: `Sorry, ${product.name} is currently unavailable.`,
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.product.id === product.id);
       
       if (existingItem) {
-        if (existingItem.quantity + quantity > product.stock) {
+        const newQuantity = existingItem.quantity + quantity;
+        if (newQuantity > product.stock) {
             toast({
-                title: "Not enough stock",
+                title: 'Not enough stock',
                 description: `You can only add ${product.stock - existingItem.quantity} more of ${product.name} to your cart.`,
-                variant: "destructive",
+                variant: 'destructive',
             });
+            // Add only the remaining stock
+            if (product.stock > existingItem.quantity) {
+              return prevCart.map(item =>
+                item.product.id === product.id
+                  ? { ...item, quantity: product.stock }
+                  : item
+              );
+            }
             return prevCart;
         }
+        // Update quantity
         return prevCart.map(item =>
           item.product.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: newQuantity }
             : item
         );
       }
+      
+      // Add new item
+      if (quantity > product.stock) {
+        toast({
+          title: 'Not enough stock',
+          description: `Only ${product.stock} of ${product.name} available.`,
+          variant: 'destructive',
+        });
+        return [...prevCart, { product, quantity: product.stock }];
+      }
+      
+      toast({
+        title: 'Added to cart',
+        description: `${quantity} x ${product.name} has been added.`,
+      });
       return [...prevCart, { product, quantity }];
     });
-    
-    const existingItem = cart.find(item => item.product.id === product.id);
-    const availableStock = existingItem ? product.stock - existingItem.quantity : product.stock;
-
-    if(availableStock >= quantity) {
-      toast({
-        title: "Added to cart",
-        description: `${product.name} has been added to your cart.`,
-      });
-    }
   };
 
   const removeFromCart = (productId: string) => {
