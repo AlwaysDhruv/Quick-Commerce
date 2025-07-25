@@ -9,26 +9,67 @@ import { Input } from '@/components/ui/input';
 import { Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
+import { addOrderToFirestore } from '@/lib/firestore';
+import { useRouter } from 'next/navigation';
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, cartTotal, cartCount, clearCart } = useCart();
+  const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
-  const handleCheckout = () => {
-    toast({
-      title: 'Checkout Initiated',
-      description: 'Redirecting to secure payment...',
-    });
-    // In a real app, you would redirect to a checkout page.
-    clearCart();
+  const handleCheckout = async () => {
+    if (!user) {
+      toast({
+        title: 'Not Logged In',
+        description: 'You must be logged in to check out.',
+        variant: 'destructive',
+      });
+      router.push('/login');
+      return;
+    }
+
+    if (cart.length === 0) return;
+    
+    // For this example, we'll assume all items in the cart are from the same seller.
+    const sellerId = cart[0].product.sellerId;
+
+    try {
+      await addOrderToFirestore({
+        buyerId: user.uid,
+        buyerName: user.name,
+        items: cart,
+        total: cartTotal,
+        status: 'Processing',
+        sellerId: sellerId,
+        createdAt: new Date() as any, // Firestore will convert this to Timestamp
+      });
+      
+      toast({
+        title: 'Checkout Successful!',
+        description: 'Your order has been placed.',
+      });
+      
+      clearCart();
+      router.push('/buyer');
+
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast({
+        title: 'Checkout Failed',
+        description: 'There was an issue placing your order. Please try again.',
+        variant: 'destructive',
+      });
+    }
   }
 
   if (cartCount === 0) {
     return (
       <div className="container flex min-h-[calc(100vh-12rem)] flex-col items-center justify-center text-center">
         <h1 className="text-3xl font-bold">Your Cart is Empty</h1>
-        <p className="mt-2 text-muted-foreground">Looks like you haven&apos;t added anything to your cart yet.</p>
-        <Button asChild className="mt-6 bg-primary hover:bg-primary/90">
+        <p className="mt-2 text-muted-foreground">Looks like you haven't added anything to your cart yet.</p>
+        <Button asChild className="bg-primary hover:bg-primary/90">
           <Link href="/buyer">Start Shopping</Link>
         </Button>
       </div>

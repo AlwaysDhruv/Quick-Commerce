@@ -1,7 +1,8 @@
-import { doc, getDoc, setDoc, addDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, getDoc, setDoc, addDoc, collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
 import type { User } from '@/hooks/use-auth';
 import type { Product } from './mock-data';
+import { CartItem } from '@/hooks/use-cart';
 
 export const addUserToFirestore = async (userId: string, name: string, email: string, role: 'buyer' | 'seller') => {
   try {
@@ -68,3 +69,41 @@ export const getProductsBySeller = async (sellerId: string): Promise<Product[]> 
     throw error;
   }
 }
+
+// Order type definition
+export type Order = {
+  id: string;
+  buyerId: string;
+  buyerName: string;
+  items: CartItem[];
+  total: number;
+  status: 'Processing' | 'Shipped' | 'Delivered';
+  createdAt: Timestamp;
+  sellerId: string; // Assuming one seller per order for simplicity
+};
+
+
+// Order Functions
+export const addOrderToFirestore = async (orderData: Omit<Order, 'id'>) => {
+  try {
+    const docRef = await addDoc(collection(db, 'orders'), {
+      ...orderData,
+      createdAt: Timestamp.now(),
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error('Error adding order to Firestore: ', error);
+    throw error;
+  }
+};
+
+export const getOrdersBySeller = async (sellerId: string): Promise<Order[]> => {
+  try {
+    const q = query(collection(db, 'orders'), where('sellerId', '==', sellerId));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+  } catch (error) {
+    console.error('Error getting orders by seller from Firestore: ', error);
+    throw error;
+  }
+};

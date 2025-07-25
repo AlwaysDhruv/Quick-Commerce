@@ -1,47 +1,35 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-
-// Mock data for orders - in a real app, this would come from your database
-const mockOrders = [
-  {
-    id: 'ORD001',
-    customer: 'Liam Johnson',
-    date: '2023-10-26',
-    total: 89.99,
-    status: 'Shipped',
-    product: 'Handcrafted Leather Wallet',
-  },
-  {
-    id: 'ORD002',
-    customer: 'Olivia Smith',
-    date: '2023-10-25',
-    total: 349.99,
-    status: 'Processing',
-    product: 'Noise-Cancelling Headphones',
-  },
-  {
-    id: 'ORD003',
-    customer: 'Noah Brown',
-    date: '2023-10-24',
-    total: 45.00,
-    status: 'Delivered',
-    product: 'Gourmet Coffee Sampler',
-  },
-    {
-    id: 'ORD004',
-    customer: 'Emma Davis',
-    date: '2023-10-22',
-    total: 499.99,
-    status: 'Delivered',
-    product: 'Luxury Chronograph Watch',
-  },
-];
+import { getOrdersBySeller, type Order } from '@/lib/firestore';
+import { useAuth } from '@/hooks/use-auth';
+import { Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
 
 export default function OrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (user) {
+        setIsLoading(true);
+        const fetchedOrders = await getOrdersBySeller(user.uid);
+        // Sort orders by most recent
+        fetchedOrders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+        setOrders(fetchedOrders);
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [user]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -61,32 +49,50 @@ export default function OrdersPage() {
               <TableRow>
                 <TableHead>Order ID</TableHead>
                 <TableHead>Customer</TableHead>
-                <TableHead>Product</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Items</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead className="text-center">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.id}</TableCell>
-                  <TableCell>{order.customer}</TableCell>
-                  <TableCell>{order.product}</TableCell>
-                  <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
-                  <TableCell className="text-center">
-                     <Badge
-                      className={cn(
-                        order.status === 'Shipped' && 'bg-blue-500/20 text-blue-500',
-                        order.status === 'Processing' && 'bg-yellow-500/20 text-yellow-500',
-                        order.status === 'Delivered' && 'bg-green-500/20 text-green-500'
-                      )}
-                      variant="outline"
-                    >
-                      {order.status}
-                    </Badge>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">
+                    <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : orders.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                    You have no orders yet.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                orders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">...{order.id.slice(-6)}</TableCell>
+                    <TableCell>{order.buyerName}</TableCell>
+                    <TableCell>{format(order.createdAt.toDate(), 'PPP')}</TableCell>
+                    <TableCell>
+                      {order.items.map(item => `${item.product.name} (x${item.quantity})`).join(', ')}
+                    </TableCell>
+                    <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
+                    <TableCell className="text-center">
+                      <Badge
+                        className={cn(
+                          order.status === 'Shipped' && 'bg-blue-500/20 text-blue-500',
+                          order.status === 'Processing' && 'bg-yellow-500/20 text-yellow-500',
+                          order.status === 'Delivered' && 'bg-green-500/20 text-green-500'
+                        )}
+                        variant="outline"
+                      >
+                        {order.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
