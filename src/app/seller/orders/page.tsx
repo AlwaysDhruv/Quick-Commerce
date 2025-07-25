@@ -23,8 +23,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import Image from 'next/image';
+import React from 'react';
 
 
 function DeleteOrderDialog({ order, onOrderDeleted }: { order: Order; onOrderDeleted: () => void }) {
@@ -88,9 +88,8 @@ function OrderRow({ order, onOrderDeleted }: { order: Order; onOrderDeleted: () 
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <Collapsible asChild key={order.id} open={isOpen} onOpenChange={setIsOpen}>
-      <>
-        <TableRow>
+    <React.Fragment>
+        <TableRow onClick={() => setIsOpen(!isOpen)} className="cursor-pointer">
           <TableCell className="font-medium">...{order.id.slice(-6)}</TableCell>
           <TableCell>{order.buyerName}</TableCell>
           <TableCell>{format(order.createdAt.toDate(), 'PPP')}</TableCell>
@@ -108,14 +107,14 @@ function OrderRow({ order, onOrderDeleted }: { order: Order; onOrderDeleted: () 
             </Badge>
           </TableCell>
            <TableCell className="text-center">
-             <CollapsibleTrigger asChild>
-               <Button variant="ghost" size="sm" className="w-9 p-0">
-                  <span className="sr-only">Toggle details</span>
-                  <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+              <Button variant="ghost" size="sm" className="w-9 p-0" asChild>
+                  <div>
+                    <span className="sr-only">Toggle details</span>
+                    <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+                  </div>
                </Button>
-            </CollapsibleTrigger>
           </TableCell>
-          <TableCell>
+          <TableCell onClick={(e) => e.stopPropagation()}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -130,7 +129,7 @@ function OrderRow({ order, onOrderDeleted }: { order: Order; onOrderDeleted: () 
             </DropdownMenu>
           </TableCell>
         </TableRow>
-        <CollapsibleContent asChild>
+        {isOpen && (
           <tr className="bg-muted/50">
             <TableCell colSpan={7} className="p-0">
                <div className="p-6">
@@ -194,9 +193,8 @@ function OrderRow({ order, onOrderDeleted }: { order: Order; onOrderDeleted: () 
               </div>
             </TableCell>
           </tr>
-        </CollapsibleContent>
-      </>
-    </Collapsible>
+        )}
+    </React.Fragment>
   )
 }
 
@@ -275,4 +273,3 @@ export default function OrdersPage() {
     </div>
   );
 }
- 
