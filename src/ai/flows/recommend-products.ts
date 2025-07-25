@@ -16,15 +16,17 @@ const RecommendProductsInputSchema = z.object({
     .string()
     .describe('A description of the user shopping preferences.'),
   productCatalog: z
-    .string()
-    .describe('A description of the available product catalog.'),
+    .array(z.string())
+    .describe('A list of available product categories.'),
 });
 export type RecommendProductsInput = z.infer<typeof RecommendProductsInputSchema>;
 
 const RecommendProductsOutputSchema = z.object({
   recommendations: z
-    .string()
-    .describe('A list of personalized product recommendations.'),
+    .array(z.string())
+    .describe(
+      'A list of 3-5 product categories or keywords from the catalog that best match the user\'s preferences. These should be existing categories.'
+    ),
 });
 export type RecommendProductsOutput = z.infer<typeof RecommendProductsOutputSchema>;
 
@@ -36,7 +38,16 @@ const prompt = ai.definePrompt({
   name: 'recommendProductsPrompt',
   input: {schema: RecommendProductsInputSchema},
   output: {schema: RecommendProductsOutputSchema},
-  prompt: `You are a personal shopping assistant. Based on the user's preferences and the available product catalog, you will provide a list of personalized product recommendations.\n\nUser Preferences: {{{userPreferences}}}\nProduct Catalog: {{{productCatalog}}}\n\nRecommendations:`,
+  prompt: `You are a personal shopping assistant. Based on the user's preferences, you will suggest a few product categories or keywords from the provided catalog that they might be interested in.
+
+User Preferences: {{{userPreferences}}}
+
+Available Product Categories:
+{{#each productCatalog}}
+- {{{this}}}
+{{/each}}
+
+Based on the user preferences, select 3 to 5 of the most relevant categories or keywords from the list above.`,
 });
 
 const recommendProductsFlow = ai.defineFlow(
