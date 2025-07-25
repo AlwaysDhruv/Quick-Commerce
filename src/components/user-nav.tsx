@@ -33,7 +33,7 @@ export function UserNav() {
   };
 
   if (!isMounted) {
-    return <Skeleton className="h-8 w-8 rounded-full" />;
+    return <Skeleton className="h-8 w-8" />;
   }
 
   if (loading) {
