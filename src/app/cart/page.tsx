@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCart } from '@/hooks/use-cart';
@@ -10,7 +11,7 @@ import { Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { addOrderToFirestore } from '@/lib/firestore';
+import { addOrderToFirestore, getProductsFromFirestore } from '@/lib/firestore';
 import { useRouter } from 'next/navigation';
 
 export default function CartPage() {
@@ -48,6 +49,32 @@ export default function CartPage() {
     const sellerId = cart[0].product.sellerId;
 
     try {
+       // --- Stock Verification Step ---
+      const allProducts = await getProductsFromFirestore();
+      const productMap = new Map(allProducts.map(p => [p.id, p]));
+
+      let stockError = false;
+      for (const item of cart) {
+        const productInDb = productMap.get(item.product.id);
+        if (!productInDb || productInDb.stock < item.quantity) {
+          toast({
+            title: 'Checkout Error',
+            description: `${item.product.name} is out of stock or has insufficient quantity. Please update your cart.`,
+            variant: 'destructive',
+          });
+          stockError = true;
+          break; // Stop on first error
+        }
+      }
+
+      if (stockError) {
+        // Optionally, you could implement logic to auto-update the cart here.
+        // For now, we'll just stop the checkout.
+        return;
+      }
+      // --- End Stock Verification ---
+
+
       await addOrderToFirestore({
         buyerId: user.uid,
         buyerName: user.name,

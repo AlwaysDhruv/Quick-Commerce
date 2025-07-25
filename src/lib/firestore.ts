@@ -1,4 +1,5 @@
-import { doc, getDoc, setDoc, addDoc, collection, getDocs, query, where, Timestamp, updateDoc, deleteDoc } from 'firebase/firestore';
+
+import { doc, getDoc, setDoc, addDoc, collection, getDocs, query, where, Timestamp, updateDoc, deleteDoc, writeBatch, runTransaction } from 'firebase/firestore';
 import { db } from './firebase';
 import type { User } from '@/hooks/use-auth';
 import type { Product } from './mock-data';
@@ -115,17 +116,44 @@ export type Order = {
 // Order Functions
 export const addOrderToFirestore = async (orderData: Omit<Order, 'id'>) => {
   try {
-    // Note: In a real app, you'd decrement product stock here within a transaction.
-    const docRef = await addDoc(collection(db, 'orders'), {
-      ...orderData,
-      createdAt: Timestamp.now(),
+    await runTransaction(db, async (transaction) => {
+      // 1. Create the new order document
+      const orderRef = doc(collection(db, 'orders'));
+      transaction.set(orderRef, {
+        ...orderData,
+        createdAt: Timestamp.now(),
+      });
+
+      // 2. Decrement stock for each product in the order
+      for (const item of orderData.items) {
+        const productRef = doc(db, 'products', item.product.id);
+        const productDoc = await transaction.get(productRef);
+
+        if (!productDoc.exists()) {
+          throw new Error(`Product ${item.product.name} not found!`);
+        }
+
+        const currentStock = productDoc.data().stock;
+        const newStock = currentStock - item.quantity;
+
+        if (newStock < 0) {
+          throw new Error(`Not enough stock for ${item.product.name}.`);
+        }
+
+        transaction.update(productRef, { stock: newStock });
+      }
     });
-    return docRef.id;
+
+    // The transaction was successful if we get here.
+    // The orderRef.id is not available outside the transaction, so we can't return it directly.
+    // We could refactor to return it if needed, but for now we'll return void.
+    
   } catch (error) {
     console.error('Error adding order to Firestore: ', error);
-    throw error;
+    throw error; // Re-throw the error to be caught by the calling function
   }
 };
+
 
 export const getOrdersBySeller = async (sellerId: string): Promise<Order[]> => {
   try {
