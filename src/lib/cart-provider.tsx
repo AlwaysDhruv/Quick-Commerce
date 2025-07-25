@@ -13,7 +13,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const addToCart = (product: Product, quantity: number = 1) => {
     // Check if product is out of stock first
     if (product.stock <= 0) {
-      console.error('Attempted to add out-of-stock item to cart.');
       return { success: false, reason: 'out-of-stock' };
     }
 
@@ -26,7 +25,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (existingItem) {
         const newQuantity = existingItem.quantity + quantity;
         if (newQuantity > product.stock) {
-            console.error('Not enough stock to add to cart.');
             // Add only what's left
             if (product.stock > existingItem.quantity) {
                  const quantityAdded = product.stock - existingItem.quantity;
@@ -52,7 +50,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       
       // Add new item
       if (quantity > product.stock) {
-        console.error('Not enough stock for new cart item.');
         newQuantityInCart = product.stock;
         addedToCart = true;
         return [...prevCart, { product, quantity: product.stock }];
