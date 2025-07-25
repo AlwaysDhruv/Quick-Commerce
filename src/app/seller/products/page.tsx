@@ -24,7 +24,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
 
@@ -298,7 +297,7 @@ function EditProductDialog({ product, onProductUpdated }: { product: Product; on
   );
 }
 
-function DeleteProductDialog({ product, onProductDeleted }: { product: Product; onProductDeleted: () => void }) {
+function DeleteProductDialog({ product, onProductDeleted, children }: { product: Product; onProductDeleted: () => void, children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
@@ -327,15 +326,9 @@ function DeleteProductDialog({ product, onProductDeleted }: { product: Product; 
 
   return (
      <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
-        <DropdownMenuItem
-          className="text-destructive"
-          onSelect={(e) => e.preventDefault()}
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete
-        </DropdownMenuItem>
-      </AlertDialogTrigger>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -438,20 +431,27 @@ export default function ProductsPage() {
                     )}
                   </TableCell>
                   <TableCell className="text-right">${product.price.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                         <EditProductDialog product={product} onProductUpdated={fetchProducts} />
-                         <DeleteProductDialog product={product} onProductDeleted={fetchProducts} />
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                       <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                           <EditProductDialog product={product} onProductUpdated={fetchProducts} />
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                       <DeleteProductDialog product={product} onProductDeleted={fetchProducts}>
+                           <Button size="icon" variant="outline" className="text-destructive hover:bg-destructive hover:text-destructive-foreground">
+                               <Trash2 className="h-4 w-4" />
+                               <span className="sr-only">Delete</span>
+                           </Button>
+                       </DeleteProductDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
