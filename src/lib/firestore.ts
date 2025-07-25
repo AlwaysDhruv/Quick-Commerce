@@ -169,3 +169,12 @@ export const getOrdersBySeller = async (sellerId: string): Promise<Order[]> => {
     throw error;
   }
 };
+
+export const deleteOrderFromFirestore = async (orderId: string) => {
+  try {
+    await deleteDoc(doc(db, 'orders', orderId));
+  } catch (error) {
+    console.error('Error deleting order from Firestore: ', error);
+    throw error;
+  }
+};

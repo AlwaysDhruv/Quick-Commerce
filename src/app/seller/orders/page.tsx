@@ -5,28 +5,100 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { getOrdersBySeller, type Order } from '@/lib/firestore';
+import { getOrdersBySeller, deleteOrderFromFirestore, type Order } from '@/lib/firestore';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MoreHorizontal, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useToast } from '@/hooks/use-toast';
+
+
+function DeleteOrderDialog({ order, onOrderDeleted }: { order: Order; onOrderDeleted: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { toast } = useToast();
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteOrderFromFirestore(order.id);
+      toast({
+        title: 'Order Deleted',
+        description: `Order ...${order.id.slice(-6)} has been removed.`,
+      });
+      onOrderDeleted();
+      setOpen(false);
+    } catch (error) {
+       console.error(error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete order. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  return (
+     <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <DropdownMenuItem
+          className="text-destructive"
+          onSelect={(e) => e.preventDefault()}
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete
+        </DropdownMenuItem>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete the order from <strong>{order.buyerName}</strong>.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Yes, delete order
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (user) {
-        setIsLoading(true);
-        const fetchedOrders = await getOrdersBySeller(user.uid);
-        // Sort orders by most recent
-        fetchedOrders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-        setOrders(fetchedOrders);
-        setIsLoading(false);
-      }
-    };
+  const fetchOrders = async () => {
+    if (user) {
+      setIsLoading(true);
+      const fetchedOrders = await getOrdersBySeller(user.uid);
+      // Sort orders by most recent
+      fetchedOrders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+      setOrders(fetchedOrders);
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchOrders();
   }, [user]);
 
@@ -53,18 +125,21 @@ export default function OrdersPage() {
                 <TableHead>Items</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead className="text-center">Status</TableHead>
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">
+                  <TableCell colSpan={7} className="text-center">
                     <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
               ) : orders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
                     You have no orders yet.
                   </TableCell>
                 </TableRow>
@@ -89,6 +164,20 @@ export default function OrdersPage() {
                       >
                         {order.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DeleteOrderDialog order={order} onOrderDeleted={fetchOrders} />
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))
