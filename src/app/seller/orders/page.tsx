@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getOrdersBySeller, deleteOrderFromFirestore, type Order } from '@/lib/firestore';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Loader2, MoreHorizontal, Trash2, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
@@ -20,9 +21,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import Image from 'next/image';
 
 
 function DeleteOrderDialog({ order, onOrderDeleted }: { order: Order; onOrderDeleted: () => void }) {
@@ -54,7 +56,7 @@ function DeleteOrderDialog({ order, onOrderDeleted }: { order: Order; onOrderDel
 
   return (
      <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
+      <DropdownMenuTrigger asChild>
         <DropdownMenuItem
           className="text-destructive"
           onSelect={(e) => e.preventDefault()}
@@ -62,7 +64,7 @@ function DeleteOrderDialog({ order, onOrderDeleted }: { order: Order; onOrderDel
           <Trash2 className="mr-2 h-4 w-4" />
           Delete
         </DropdownMenuItem>
-      </AlertDialogTrigger>
+      </DropdownMenuTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -79,6 +81,95 @@ function DeleteOrderDialog({ order, onOrderDeleted }: { order: Order; onOrderDel
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  )
+}
+
+function OrderRow({ order, onOrderDeleted }: { order: Order; onOrderDeleted: () => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+     <Collapsible asChild key={order.id} open={isOpen} onOpenChange={setIsOpen}>
+      <>
+        <TableRow className="cursor-pointer">
+          <TableCell className="font-medium">...{order.id.slice(-6)}</TableCell>
+          <TableCell>{order.buyerName}</TableCell>
+          <TableCell>{format(order.createdAt.toDate(), 'PPP')}</TableCell>
+          <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
+          <TableCell className="text-center">
+            <Badge
+              className={cn(
+                order.status === 'Shipped' && 'bg-blue-500/20 text-blue-500',
+                order.status === 'Processing' && 'bg-yellow-500/20 text-yellow-500',
+                order.status === 'Delivered' && 'bg-green-500/20 text-green-500'
+              )}
+              variant="outline"
+            >
+              {order.status}
+            </Badge>
+          </TableCell>
+           <TableCell className="text-center">
+             <CollapsibleTrigger asChild>
+               <Button variant="ghost" size="sm" className="w-9 p-0">
+                  <span className="sr-only">Toggle details</span>
+                  <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
+               </Button>
+            </CollapsibleTrigger>
+          </TableCell>
+          <TableCell>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button aria-haspopup="true" size="icon" variant="ghost">
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="sr-only">Toggle menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DeleteOrderDialog order={order} onOrderDeleted={onOrderDeleted} />
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </TableCell>
+        </TableRow>
+        <CollapsibleContent asChild>
+          <tr className="bg-muted/50">
+            <TableCell colSpan={7} className="p-0">
+               <div className="p-4">
+                <h4 className="font-semibold mb-2">Order Items</h4>
+                 <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[80px]">Image</TableHead>
+                      <TableHead>Product</TableHead>
+                      <TableHead className="text-center">Quantity</TableHead>
+                      <TableHead className="text-right">Price</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {order.items.map(item => (
+                       <TableRow key={item.product.id}>
+                        <TableCell>
+                           <Image
+                            src={item.product.image}
+                            alt={item.product.name}
+                            width={64}
+                            height={64}
+                            className="rounded-md object-cover"
+                            data-ai-hint={item.product.dataAiHint}
+                          />
+                        </TableCell>
+                        <TableCell>{item.product.name}</TableCell>
+                        <TableCell className="text-center">{item.quantity}</TableCell>
+                        <TableCell className="text-right">${item.product.price.toFixed(2)}</TableCell>
+                       </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TableCell>
+          </tr>
+        </CollapsibleContent>
+      </>
+    </Collapsible>
   )
 }
 
@@ -99,7 +190,9 @@ export default function OrdersPage() {
   };
 
   useEffect(() => {
-    fetchOrders();
+    if(user) {
+      fetchOrders();
+    }
   }, [user]);
 
   return (
@@ -122,10 +215,10 @@ export default function OrdersPage() {
                 <TableHead>Order ID</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead>Items</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead className="text-center">Status</TableHead>
-                <TableHead>
+                <TableHead className="w-[50px] text-center">Details</TableHead>
+                <TableHead className="w-[50px]">
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
@@ -145,41 +238,7 @@ export default function OrdersPage() {
                 </TableRow>
               ) : (
                 orders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">...{order.id.slice(-6)}</TableCell>
-                    <TableCell>{order.buyerName}</TableCell>
-                    <TableCell>{format(order.createdAt.toDate(), 'PPP')}</TableCell>
-                    <TableCell>
-                      {order.items.map(item => `${item.product.name} (x${item.quantity})`).join(', ')}
-                    </TableCell>
-                    <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge
-                        className={cn(
-                          order.status === 'Shipped' && 'bg-blue-500/20 text-blue-500',
-                          order.status === 'Processing' && 'bg-yellow-500/20 text-yellow-500',
-                          order.status === 'Delivered' && 'bg-green-500/20 text-green-500'
-                        )}
-                        variant="outline"
-                      >
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DeleteOrderDialog order={order} onOrderDeleted={fetchOrders} />
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
+                  <OrderRow key={order.id} order={order} onOrderDeleted={fetchOrders} />
                 ))
               )}
             </TableBody>
