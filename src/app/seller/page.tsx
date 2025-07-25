@@ -3,8 +3,103 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
-import { getOrdersBySeller, getProductsBySeller, getUsersCountFromFirestore } from '@/lib/firestore';
-import { DollarSign, Package, ShoppingCart, Users, Loader2 } from 'lucide-react';
+import { getOrdersBySeller, getProductsBySeller, getUsersCountFromFirestore, addProductToFirestore } from '@/lib/firestore';
+import { DollarSign, Package, ShoppingCart, Users, Loader2, Database } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+
+const sampleProducts = [
+    {
+      name: 'Artisan Leather Journal',
+      description: 'A beautifully crafted leather journal for your thoughts and sketches. Made with full-grain leather and filled with 200 pages of acid-free paper.',
+      price: 45.0,
+      category: 'Stationery',
+      stock: 15,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'leather journal',
+    },
+    {
+      name: 'Minimalist Wall Clock',
+      description: 'A silent, non-ticking wall clock with a clean, modern design. Perfect for any room in your home or office.',
+      price: 60.0,
+      category: 'Home Decor',
+      stock: 10,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'modern clock',
+    },
+    {
+      name: 'Organic Beard Oil',
+      description: 'A blend of natural oils to soften, tame, and condition your beard. Lightly scented with sandalwood and cedarwood.',
+      price: 25.0,
+      category: 'Grooming',
+      stock: 30,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'beard oil',
+    },
+    {
+      name: 'Hand-poured Soy Candle',
+      description: 'A relaxing lavender and chamomile scented soy candle. Burns for over 40 hours, creating a calming ambiance.',
+      price: 22.0,
+      category: 'Home Fragrance',
+      stock: 25,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'scented candle',
+    },
+    {
+      name: 'Gourmet Coffee Beans',
+      description: 'A 12oz bag of single-origin Ethiopian Yirgacheffe coffee beans. Notes of blueberry, lemon, and floral undertones.',
+      price: 18.0,
+      category: 'Food & Drink',
+      stock: 50,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'coffee beans',
+    },
+    {
+      name: 'Ceramic Pour-Over Coffee Dripper',
+      description: 'Brew the perfect cup of coffee with this elegant ceramic pour-over dripper. Designed for optimal heat retention and a clean brew.',
+      price: 35.0,
+      category: 'Kitchenware',
+      stock: 20,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'coffee dripper',
+    },
+     {
+      name: 'Waterproof Adventure Backpack',
+      description: 'A durable and waterproof 30L backpack designed for hiking and travel. Features multiple compartments and comfortable straps.',
+      price: 120.0,
+      category: 'Outdoor Gear',
+      stock: 8,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'hiking backpack',
+    },
+    {
+      name: 'Smart Reusable Notebook',
+      description: 'A digital-friendly notebook that allows you to write, scan, and erase pages. Syncs with your favorite cloud services.',
+      price: 30.0,
+      category: 'Tech Gadgets',
+      stock: 40,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'smart notebook',
+    },
+     {
+      name: 'Weighted Comfort Blanket',
+      description: 'A 15lb weighted blanket designed to reduce anxiety and improve sleep quality. Made with soft, breathable cotton.',
+      price: 90.0,
+      category: 'Bedding',
+      stock: 12,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'weighted blanket',
+    },
+    {
+      name: 'Portable Bluetooth Speaker',
+      description: 'A compact but powerful Bluetooth speaker with 12 hours of battery life and a waterproof design. Delivers rich, clear sound.',
+      price: 75.0,
+      category: 'Electronics',
+      stock: 18,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'bluetooth speaker',
+    }
+  ];
 
 export default function SellerDashboard() {
   const { user } = useAuth();
@@ -13,33 +108,71 @@ export default function SellerDashboard() {
   const [totalRevenue, setTotalRevenue] = useState<number | null>(null);
   const [userCount, setUserCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSeeding, setIsSeeding] = useState(false);
+  const { toast } = useToast();
+
+  const fetchData = async () => {
+    if (user) {
+      setLoading(true);
+      try {
+        const [products, orders, users] = await Promise.all([
+          getProductsBySeller(user.uid),
+          getOrdersBySeller(user.uid),
+          getUsersCountFromFirestore(),
+        ]);
+
+        setProductCount(products.length);
+        setOrderCount(orders.length);
+        setTotalRevenue(orders.reduce((sum, order) => sum + order.total, 0));
+        setUserCount(users);
+
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (user) {
-        setLoading(true);
-        try {
-          const [products, orders, users] = await Promise.all([
-            getProductsBySeller(user.uid),
-            getOrdersBySeller(user.uid),
-            getUsersCountFromFirestore(),
-          ]);
-
-          setProductCount(products.length);
-          setOrderCount(orders.length);
-          setTotalRevenue(orders.reduce((sum, order) => sum + order.total, 0));
-          setUserCount(users);
-
-        } catch (error) {
-          console.error("Failed to fetch dashboard data:", error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
     fetchData();
   }, [user]);
+
+  const handleSeedProducts = async () => {
+    if (!user) return;
+    setIsSeeding(true);
+    try {
+      const existingProducts = await getProductsBySeller(user.uid);
+      if (existingProducts.length > 0) {
+        toast({
+            title: "Products Already Exist",
+            description: "Your database already has products. Seeding is not required.",
+            variant: "destructive",
+        });
+        return;
+      }
+
+      await Promise.all(sampleProducts.map(p => addProductToFirestore({ ...p, sellerId: user.uid })));
+      
+      toast({
+        title: "Products Seeded!",
+        description: "10 sample products have been added to your store.",
+      });
+
+      // Refresh the data on the dashboard
+      await fetchData();
+
+    } catch (error) {
+      console.error("Failed to seed products:", error);
+       toast({
+        title: "Seeding Failed",
+        description: "Could not add sample products. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSeeding(false);
+    }
+  }
 
   const renderStatCard = (title: string, value: string | number | null, icon: React.ReactNode, subtext?: string) => (
     <Card>
@@ -62,8 +195,16 @@ export default function SellerDashboard() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold font-headline">Welcome, {user?.name}!</h1>
-      <p className="text-muted-foreground">Here&apos;s a summary of your shop&apos;s performance.</p>
+      <div className="flex items-start justify-between">
+        <div>
+            <h1 className="text-3xl font-bold font-headline">Welcome, {user?.name}!</h1>
+            <p className="text-muted-foreground">Here&apos;s a summary of your shop&apos;s performance.</p>
+        </div>
+        <Button variant="outline" onClick={handleSeedProducts} disabled={isSeeding}>
+            {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
+            Seed Products
+        </Button>
+      </div>
 
       <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {renderStatCard('Total Revenue', totalRevenue !== null ? `$${totalRevenue.toLocaleString()}` : 'N/A', <DollarSign className="h-4 w-4 text-muted-foreground" />)}
