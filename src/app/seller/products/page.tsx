@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Image from 'next/image';
 import { type Product } from '@/lib/mock-data';
-import { getProductsBySeller, addProductToFirestore, updateProductInFirestore, deleteProductFromFirestore } from '@/lib/firestore';
+import { getProductsBySeller, addProductToFirestore, updateProductInFirestore, deleteProductFromFirestore, deleteMultipleProductsFromFirestore } from '@/lib/firestore';
 import { useAuth } from '@/hooks/use-auth';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
@@ -355,6 +356,10 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const { toast } = useToast();
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
 
   const fetchProducts = async () => {
     if (user) {
@@ -369,6 +374,38 @@ export default function ProductsPage() {
     fetchProducts();
   }, [user]);
 
+  const handleSelectProduct = (productId: string, checked: boolean) => {
+    setSelectedProductIds(prev =>
+      checked ? [...prev, productId] : prev.filter(id => id !== productId)
+    );
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    setSelectedProductIds(checked ? products.map(p => p.id) : []);
+  };
+
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    try {
+      await deleteMultipleProductsFromFirestore(selectedProductIds);
+      toast({
+        title: 'Products Deleted',
+        description: `${selectedProductIds.length} products have been removed.`,
+      });
+      fetchProducts(); // Refresh product list
+      setSelectedProductIds([]);
+      setIsBulkDeleteDialogOpen(false);
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete selected products. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -377,13 +414,47 @@ export default function ProductsPage() {
           <h1 className="text-2xl font-bold font-headline">Your Products</h1>
           <p className="text-muted-foreground">Manage your product listings here.</p>
         </div>
-        <AddProductDialog onProductAdded={fetchProducts} />
+        <div className="flex items-center gap-2">
+            {selectedProductIds.length > 0 && (
+              <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+                <AlertDialogTrigger asChild>
+                    <Button variant="destructive">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete ({selectedProductIds.length})
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete the selected <strong>{selectedProductIds.length}</strong> products.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleBulkDelete} disabled={isBulkDeleting} className="bg-destructive hover:bg-destructive/90">
+                      {isBulkDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Yes, delete products
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            <AddProductDialog onProductAdded={fetchProducts} />
+        </div>
       </div>
 
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[50px]">
+                <Checkbox
+                    checked={selectedProductIds.length > 0 && selectedProductIds.length === products.length}
+                    onCheckedChange={(checked) => handleSelectAll(Boolean(checked))}
+                    aria-label="Select all"
+                  />
+              </TableHead>
               <TableHead className="hidden w-[100px] sm:table-cell">Image</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Category</TableHead>
@@ -400,19 +471,26 @@ export default function ProductsPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin text-muted-foreground" />
                 </TableCell>
               </TableRow>
             ) : products.length === 0 ? (
                 <TableRow>
-                    <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
                     You haven&apos;t added any products yet.
                     </TableCell>
                 </TableRow>
             ) : (
               products.map((product) => (
-                <TableRow key={product.id}>
+                <TableRow key={product.id} data-state={selectedProductIds.includes(product.id) && "selected"}>
+                   <TableCell>
+                      <Checkbox
+                          checked={selectedProductIds.includes(product.id)}
+                          onCheckedChange={(checked) => handleSelectProduct(product.id, Boolean(checked))}
+                          aria-label={`Select ${product.name}`}
+                        />
+                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Image
                       alt={product.name}

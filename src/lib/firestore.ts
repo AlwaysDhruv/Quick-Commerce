@@ -79,6 +79,20 @@ export const deleteProductFromFirestore = async (productId: string) => {
   }
 }
 
+export const deleteMultipleProductsFromFirestore = async (productIds: string[]) => {
+  try {
+    const batch = writeBatch(db);
+    productIds.forEach(id => {
+      const docRef = doc(db, 'products', id);
+      batch.delete(docRef);
+    });
+    await batch.commit();
+  } catch (error) {
+    console.error('Error deleting multiple products from Firestore: ', error);
+    throw error;
+  }
+}
+
 export const getProductsFromFirestore = async (): Promise<Product[]> => {
   try {
     const querySnapshot = await getDocs(collection(db, 'products'));
