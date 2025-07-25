@@ -19,6 +19,18 @@ export default function CartPage() {
   const { toast } = useToast();
   const router = useRouter();
 
+  const handleUpdateQuantity = (productId: string, quantity: number) => {
+    const result = updateQuantity(productId, quantity);
+    if (!result.success && result.reason === 'stock-limit') {
+      const product = cart.find(item => item.product.id === productId)?.product;
+      toast({
+        title: 'Not enough stock',
+        description: `Only ${product?.stock} of ${product?.name} available.`,
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleCheckout = async () => {
     if (!user) {
       toast({
@@ -114,7 +126,7 @@ export default function CartPage() {
                           type="number"
                           min="1"
                           value={quantity}
-                          onChange={(e) => updateQuantity(product.id, parseInt(e.target.value, 10))}
+                          onChange={(e) => handleUpdateQuantity(product.id, parseInt(e.target.value, 10))}
                           className="w-20 mx-auto text-center"
                         />
                       </TableCell>

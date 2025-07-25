@@ -8,11 +8,22 @@ export type CartItem = {
   quantity: number;
 };
 
+export type AddToCartResult = {
+    success: boolean;
+    reason: 'out-of-stock' | 'stock-limit' | null;
+    newQuantity?: number;
+}
+
+export type UpdateQuantityResult = {
+    success: boolean;
+    reason: 'stock-limit' | null;
+}
+
 export type CartContextType = {
   cart: CartItem[];
-  addToCart: (product: Product, quantity?: number) => void;
+  addToCart: (product: Product, quantity?: number) => AddToCartResult;
   removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  updateQuantity: (productId: string, quantity: number) => UpdateQuantityResult;
   clearCart: () => void;
   cartTotal: number;
   cartCount: number;

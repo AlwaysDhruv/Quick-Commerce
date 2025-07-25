@@ -7,6 +7,7 @@ import type { Product } from '@/lib/mock-data';
 import { ShoppingCart, Ban } from 'lucide-react';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProductCardProps {
   product: Product;
@@ -14,7 +15,33 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
+  const { toast } = useToast();
   const isOutOfStock = product.stock <= 0;
+
+  const handleAddToCart = () => {
+    const result = addToCart(product, 1);
+
+    if (result.success) {
+      toast({
+        title: 'Added to cart',
+        description: `1 x ${product.name} has been added.`,
+      });
+    } else {
+      if (result.reason === 'out-of-stock') {
+        toast({
+          title: 'Out of Stock',
+          description: `Sorry, ${product.name} is currently unavailable.`,
+          variant: 'destructive',
+        });
+      } else if (result.reason === 'stock-limit') {
+        toast({
+          title: 'Not enough stock',
+          description: `You can't add more of ${product.name} to your cart.`,
+          variant: 'destructive',
+        });
+      }
+    }
+  };
 
   return (
     <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-1">
@@ -42,7 +69,7 @@ export function ProductCard({ product }: ProductCardProps) {
           size="icon" 
           variant="outline" 
           className="border-accent text-accent hover:bg-accent hover:text-accent-foreground disabled:border-muted disabled:bg-transparent disabled:text-muted-foreground disabled:cursor-not-allowed" 
-          onClick={() => addToCart(product)}
+          onClick={handleAddToCart}
           disabled={isOutOfStock}
           aria-label={isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
         >
