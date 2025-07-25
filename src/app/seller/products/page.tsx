@@ -24,6 +24,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
 
@@ -326,9 +327,9 @@ function DeleteProductDialog({ product, onProductDeleted, children }: { product:
 
   return (
      <AlertDialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      <AlertDialogTrigger asChild>
         {children}
-      </DialogTrigger>
+      </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -391,18 +392,21 @@ export default function ProductsPage() {
               <TableHead>
                 <span className="sr-only">Actions</span>
               </TableHead>
+              <TableHead>
+                <span className="sr-only">Delete</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
+                <TableCell colSpan={7} className="text-center">
                   <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin text-muted-foreground" />
                 </TableCell>
               </TableRow>
             ) : products.length === 0 ? (
                 <TableRow>
-                    <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                     You haven&apos;t added any products yet.
                     </TableCell>
                 </TableRow>
@@ -432,7 +436,6 @@ export default function ProductsPage() {
                   </TableCell>
                   <TableCell className="text-right">${product.price.toFixed(2)}</TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
                        <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -445,13 +448,14 @@ export default function ProductsPage() {
                            <EditProductDialog product={product} onProductUpdated={fetchProducts} />
                         </DropdownMenuContent>
                       </DropdownMenu>
-                       <DeleteProductDialog product={product} onProductDeleted={fetchProducts}>
-                           <Button size="icon" variant="outline" className="text-destructive hover:bg-destructive hover:text-destructive-foreground">
-                               <Trash2 className="h-4 w-4" />
-                               <span className="sr-only">Delete</span>
-                           </Button>
-                       </DeleteProductDialog>
-                    </div>
+                  </TableCell>
+                  <TableCell>
+                     <DeleteProductDialog product={product} onProductDeleted={fetchProducts}>
+                         <Button size="icon" variant="outline" className="text-destructive hover:bg-destructive hover:text-destructive-foreground">
+                             <Trash2 className="h-4 w-4" />
+                             <span className="sr-only">Delete</span>
+                         </Button>
+                     </DeleteProductDialog>
                   </TableCell>
                 </TableRow>
               ))
