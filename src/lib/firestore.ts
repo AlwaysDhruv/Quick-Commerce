@@ -61,7 +61,7 @@ export const getBuyerCountFromFirestore = async (): Promise<number> => {
 }
 
 // Product Functions
-export const addProductToFirestore = async (productData: Omit<Product, 'id'>) => {
+export const addProductToFirestore = async (productData: Omit<Product, 'id' | 'sellerName'>) => {
   try {
     const docRef = await addDoc(collection(db, 'products'), productData);
     return docRef.id;
@@ -71,7 +71,7 @@ export const addProductToFirestore = async (productData: Omit<Product, 'id'>) =>
   }
 };
 
-export const updateProductInFirestore = async (productId: string, productData: Partial<Omit<Product, 'id' | 'sellerId'>>) => {
+export const updateProductInFirestore = async (productId: string, productData: Partial<Omit<Product, 'id' | 'sellerId' | 'sellerName'>>) => {
   try {
     const productRef = doc(db, 'products', productId);
     await updateDoc(productRef, productData);
@@ -106,8 +106,29 @@ export const deleteMultipleProductsFromFirestore = async (productIds: string[]) 
 
 export const getProductsFromFirestore = async (): Promise<Product[]> => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'products'));
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+    const productsSnapshot = await getDocs(collection(db, 'products'));
+    const products = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Omit<Product, 'sellerName'> & { sellerName?: string } ));
+
+    if (products.length === 0) {
+        return [];
+    }
+
+    // Get unique seller IDs from all products
+    const sellerIds = [...new Set(products.map(p => p.sellerId))];
+    
+    // Fetch all unique seller documents
+    const usersSnapshot = await getDocs(query(collection(db, 'users'), where('__name__', 'in', sellerIds)));
+    const sellerMap = new Map<string, string>();
+    usersSnapshot.forEach(doc => {
+      sellerMap.set(doc.id, doc.data().name || 'Anonymous');
+    });
+
+    // Map seller names back to products
+    return products.map(product => ({
+      ...product,
+      sellerName: sellerMap.get(product.sellerId) || 'Anonymous',
+    })) as Product[];
+
   } catch (error) {
     console.error('Error getting products from Firestore: ', error);
     throw error;

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCart } from '@/hooks/use-cart';
 import type { Product } from '@/lib/mock-data';
-import { ShoppingCart, Ban } from 'lucide-react';
+import { ShoppingCart, Ban, Store } from 'lucide-react';
 import Image from 'next/image';
 import { Badge } from './ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -59,9 +59,13 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
       </CardHeader>
-      <CardContent className="flex-1 p-4">
+      <CardContent className="flex-1 p-4 space-y-2">
         <CardTitle className="text-lg font-medium">{product.name}</CardTitle>
-        <p className="mt-2 text-sm text-muted-foreground">{product.category}</p>
+        <p className="text-sm text-muted-foreground">{product.category}</p>
+        <div className="flex items-center text-xs text-muted-foreground gap-1.5">
+            <Store className="h-3 w-3" />
+            <span>{product.sellerName}</span>
+        </div>
       </CardContent>
       <CardFooter className="flex items-center justify-between p-4 pt-0">
         <p className="text-xl font-bold text-white">${product.price.toFixed(2)}</p>
