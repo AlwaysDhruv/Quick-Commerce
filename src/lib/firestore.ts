@@ -38,6 +38,16 @@ export const getUserFromFirestore = async (userId: string): Promise<Pick<User, '
   }
 };
 
+export const getUsersCountFromFirestore = async (): Promise<number> => {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'users'));
+    return querySnapshot.size;
+  } catch (error) {
+    console.error('Error getting users count from Firestore: ', error);
+    throw error;
+  }
+}
+
 // Product Functions
 export const addProductToFirestore = async (productData: Omit<Product, 'id'>) => {
   try {
