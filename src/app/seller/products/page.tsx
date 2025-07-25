@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, MoreHorizontal, Loader2, Trash2 } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Loader2, Trash2, Upload } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -40,7 +40,19 @@ function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
   const [category, setCategory] = useState('');
   const [image, setImage] = useState('');
   const [dataAiHint, setDataAiHint] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleAddProduct = async () => {
      if (!name || !price || !category) {
@@ -131,8 +143,15 @@ function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
             <Input id="category" value={category} onChange={(e) => setCategory(e.target.value)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="image" className="text-right">Image URL</Label>
-            <Input id="image" value={image} onChange={(e) => setImage(e.target.value)} className="col-span-3" placeholder="https://placehold.co/400x400.png" />
+            <Label htmlFor="image" className="text-right">Image</Label>
+            <div className="col-span-3 flex items-center gap-2">
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload
+                </Button>
+                <Input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
+                {image && <Image src={image} alt="preview" width={40} height={40} className="rounded-md object-cover" />}
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="dataAiHint" className="text-right">AI Hint</Label>
@@ -154,6 +173,7 @@ function EditProductDialog({ product, onProductUpdated }: { product: Product; on
   const [open, setOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description);
@@ -161,6 +181,17 @@ function EditProductDialog({ product, onProductUpdated }: { product: Product; on
   const [category, setCategory] = useState(product.category);
   const [image, setImage] = useState(product.image);
   const [dataAiHint, setDataAiHint] = useState(product.dataAiHint);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleUpdateProduct = async () => {
     if (!name || !price || !category) {
@@ -227,9 +258,16 @@ function EditProductDialog({ product, onProductUpdated }: { product: Product; on
             <Label htmlFor="category" className="text-right">Category</Label>
             <Input id="category" value={category} onChange={(e) => setCategory(e.target.value)} className="col-span-3" />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="image" className="text-right">Image URL</Label>
-            <Input id="image" value={image} onChange={(e) => setImage(e.target.value)} className="col-span-3" />
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="image" className="text-right">Image</Label>
+            <div className="col-span-3 flex items-center gap-2">
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload
+                </Button>
+                <Input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
+                {image && <Image src={image} alt="preview" width={40} height={40} className="rounded-md object-cover" />}
+            </div>
           </div>
            <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="dataAiHint" className="text-right">AI Hint</Label>
