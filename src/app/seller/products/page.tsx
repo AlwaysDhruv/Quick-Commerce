@@ -185,7 +185,7 @@ function EditProductDialog({ product, onProductUpdated }: { product: Product; on
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description);
   const [price, setPrice] = useState(product.price.toString());
-  const [stock, setStock] = useState(product.stock.toString());
+  const [stock, setStock] = useState((product.stock ?? 0).toString());
   const [category, setCategory] = useState(product.category);
   const [image, setImage] = useState(product.image);
   const [dataAiHint, setDataAiHint] = useState(product.dataAiHint);
