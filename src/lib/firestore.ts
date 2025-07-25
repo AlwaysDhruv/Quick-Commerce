@@ -115,6 +115,7 @@ export type Order = {
 // Order Functions
 export const addOrderToFirestore = async (orderData: Omit<Order, 'id'>) => {
   try {
+    // Note: In a real app, you'd decrement product stock here within a transaction.
     const docRef = await addDoc(collection(db, 'orders'), {
       ...orderData,
       createdAt: Timestamp.now(),

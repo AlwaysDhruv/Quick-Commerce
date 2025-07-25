@@ -37,6 +37,7 @@ function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [stock, setStock] = useState('10');
   const [category, setCategory] = useState('');
   const [image, setImage] = useState('');
   const [dataAiHint, setDataAiHint] = useState('');
@@ -55,7 +56,7 @@ function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
   };
 
   const handleAddProduct = async () => {
-     if (!name || !price || !category) {
+     if (!name || !price || !category || !stock) {
       toast({
         title: 'Missing Information',
         description: 'Please fill out all required fields.',
@@ -79,6 +80,7 @@ function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
         name,
         description,
         price: parseFloat(price),
+        stock: parseInt(stock, 10),
         category,
         image: image || 'https://placehold.co/400x400.png',
         dataAiHint,
@@ -94,6 +96,7 @@ function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
       setName('');
       setDescription('');
       setPrice('');
+      setStock('10');
       setCategory('');
       setImage('');
       setDataAiHint('');
@@ -139,6 +142,10 @@ function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
             <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="stock" className="text-right">Stock</Label>
+            <Input id="stock" type="number" value={stock} onChange={(e) => setStock(e.target.value)} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="category" className="text-right">Category</Label>
             <Input id="category" value={category} onChange={(e) => setCategory(e.target.value)} className="col-span-3" />
           </div>
@@ -178,6 +185,7 @@ function EditProductDialog({ product, onProductUpdated }: { product: Product; on
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description);
   const [price, setPrice] = useState(product.price.toString());
+  const [stock, setStock] = useState(product.stock.toString());
   const [category, setCategory] = useState(product.category);
   const [image, setImage] = useState(product.image);
   const [dataAiHint, setDataAiHint] = useState(product.dataAiHint);
@@ -194,7 +202,7 @@ function EditProductDialog({ product, onProductUpdated }: { product: Product; on
   };
 
   const handleUpdateProduct = async () => {
-    if (!name || !price || !category) {
+    if (!name || !price || !category || !stock) {
       toast({
         title: 'Missing Information',
         description: 'Please fill out all required fields.',
@@ -209,6 +217,7 @@ function EditProductDialog({ product, onProductUpdated }: { product: Product; on
         name,
         description,
         price: parseFloat(price),
+        stock: parseInt(stock, 10),
         category,
         image,
         dataAiHint,
@@ -253,6 +262,10 @@ function EditProductDialog({ product, onProductUpdated }: { product: Product; on
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="price" className="text-right">Price</Label>
             <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="stock" className="text-right">Stock</Label>
+            <Input id="stock" type="number" value={stock} onChange={(e) => setStock(e.target.value)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="category" className="text-right">Category</Label>
@@ -380,6 +393,7 @@ export default function ProductsPage() {
               <TableHead className="hidden w-[100px] sm:table-cell">Image</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>Stock</TableHead>
               <TableHead className="text-right">Price</TableHead>
               <TableHead>
                 <span className="sr-only">Actions</span>
@@ -389,13 +403,13 @@ export default function ProductsPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center">
+                <TableCell colSpan={6} className="text-center">
                   <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin text-muted-foreground" />
                 </TableCell>
               </TableRow>
             ) : products.length === 0 ? (
                 <TableRow>
-                    <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
                     You haven&apos;t added any products yet.
                     </TableCell>
                 </TableRow>
@@ -415,6 +429,13 @@ export default function ProductsPage() {
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{product.category}</Badge>
+                  </TableCell>
+                  <TableCell>
+                     {product.stock > 0 ? (
+                      <span>{product.stock}</span>
+                    ) : (
+                      <Badge variant="destructive">Out of stock</Badge>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">${product.price.toFixed(2)}</TableCell>
                   <TableCell>

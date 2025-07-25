@@ -6,6 +6,7 @@ export type Product = {
   image: string;
   category: string;
   sellerId: string;
+  stock: number;
   dataAiHint: string;
 };
 
@@ -19,6 +20,7 @@ export const mockProducts: Product[] = [
     dataAiHint: 'luxury watch',
     category: 'Accessories',
     sellerId: 'mockSeller',
+    stock: 10,
   },
   {
     id: '2',
@@ -29,6 +31,7 @@ export const mockProducts: Product[] = [
     dataAiHint: 'leather wallet',
     category: 'Accessories',
     sellerId: 'mockSeller',
+    stock: 25,
   },
   {
     id: '3',
@@ -39,6 +42,7 @@ export const mockProducts: Product[] = [
     dataAiHint: 'beard oil',
     category: 'Grooming',
     sellerId: 'mockSeller',
+    stock: 50,
   },
   {
     id: '4',
@@ -49,6 +53,7 @@ export const mockProducts: Product[] = [
     dataAiHint: 'headphones',
     category: 'Electronics',
     sellerId: 'mockSeller',
+    stock: 15,
   },
   {
     id: '5',
@@ -59,6 +64,7 @@ export const mockProducts: Product[] = [
     dataAiHint: 'french fries',
     category: 'Food & Drink',
     sellerId: 'mockSeller',
+    stock: 100,
   },
   {
     id: '6',
@@ -69,5 +75,6 @@ export const mockProducts: Product[] = [
     dataAiHint: 'desk lamp',
     category: 'Home Goods',
     sellerId: 'mockSeller',
+    stock: 20,
   },
 ];

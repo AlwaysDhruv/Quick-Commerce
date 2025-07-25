@@ -10,9 +10,27 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   const addToCart = (product: Product, quantity: number = 1) => {
+    if (product.stock < quantity) {
+        toast({
+          title: "Not enough stock",
+          description: `Only ${product.stock} of ${product.name} available.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.product.id === product.id);
+      
       if (existingItem) {
+        if (existingItem.quantity + quantity > product.stock) {
+            toast({
+                title: "Not enough stock",
+                description: `You can't add more ${product.name} to your cart.`,
+                variant: "destructive",
+            });
+            return prevCart;
+        }
         return prevCart.map(item =>
           item.product.id === product.id
             ? { ...item, quantity: item.quantity + quantity }
@@ -21,10 +39,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
       return [...prevCart, { product, quantity }];
     });
-    toast({
-      title: "Added to cart",
-      description: `${product.name} has been added to your cart.`,
-    });
+
+    if(!cart.find(item => item.product.id === product.id && item.quantity + quantity > product.stock)) {
+      toast({
+        title: "Added to cart",
+        description: `${product.name} has been added to your cart.`,
+      });
+    }
   };
 
   const removeFromCart = (productId: string) => {
@@ -33,8 +54,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   
   const updateQuantity = (productId: string, quantity: number) => {
     setCart(prevCart =>
-      prevCart.map(item =>
-        item.product.id === productId ? { ...item, quantity } : item
+      prevCart.map(item => {
+          if (item.product.id === productId) {
+            if (quantity > item.product.stock) {
+              toast({
+                title: 'Not enough stock',
+                description: `Only ${item.product.stock} of ${item.product.name} available.`,
+                variant: 'destructive',
+              });
+              return { ...item, quantity: item.product.stock };
+            }
+            return { ...item, quantity };
+          }
+          return item;
+        }
       ).filter(item => item.quantity > 0)
     );
   };
