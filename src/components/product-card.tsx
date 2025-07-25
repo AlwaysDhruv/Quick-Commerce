@@ -14,7 +14,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
-  const isOutOfStock = product.stock === 0;
+  const isOutOfStock = product.stock <= 0;
 
   return (
     <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-1">
@@ -44,6 +44,7 @@ export function ProductCard({ product }: ProductCardProps) {
           className="border-accent text-accent hover:bg-accent hover:text-accent-foreground disabled:border-muted disabled:bg-transparent disabled:text-muted-foreground disabled:cursor-not-allowed" 
           onClick={() => addToCart(product)}
           disabled={isOutOfStock}
+          aria-label={isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
         >
           {isOutOfStock ? <Ban className="h-5 w-5" /> : <ShoppingCart className="h-5 w-5" />}
           <span className="sr-only">{isOutOfStock ? 'Out of Stock' : 'Add to Cart'}</span>

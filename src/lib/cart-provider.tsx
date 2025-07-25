@@ -12,8 +12,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const addToCart = (product: Product, quantity: number = 1) => {
     if (product.stock < quantity) {
         toast({
-          title: "Not enough stock",
-          description: `Only ${product.stock} of ${product.name} available.`,
+          title: "Out of Stock",
+          description: `Sorry, ${product.name} is currently unavailable.`,
           variant: "destructive",
         });
         return;
@@ -26,7 +26,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         if (existingItem.quantity + quantity > product.stock) {
             toast({
                 title: "Not enough stock",
-                description: `You can't add more ${product.name} to your cart.`,
+                description: `You can only add ${product.stock - existingItem.quantity} more of ${product.name} to your cart.`,
                 variant: "destructive",
             });
             return prevCart;
@@ -39,8 +39,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
       return [...prevCart, { product, quantity }];
     });
+    
+    const existingItem = cart.find(item => item.product.id === product.id);
+    const availableStock = existingItem ? product.stock - existingItem.quantity : product.stock;
 
-    if(!cart.find(item => item.product.id === product.id && item.quantity + quantity > product.stock)) {
+    if(availableStock >= quantity) {
       toast({
         title: "Added to cart",
         description: `${product.name} has been added to your cart.`,
