@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ProductCard } from '@/components/product-card';
-import { mockProducts, type Product } from '@/lib/mock-data';
+import { type Product } from '@/lib/mock-data';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,14 +10,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { recommendProducts } from '@/ai/flows/recommend-products';
 import { Wand2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getProductsFromFirestore } from '@/lib/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
-function AiRecommendations() {
+function AiRecommendations({ products }: { products: Product[] }) {
   const [preferences, setPreferences] = useState('');
   const [recommendations, setRecommendations] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const productCatalog = mockProducts.map(p => `${p.name}: ${p.description}`).join('\n');
+  const productCatalog = products.map(p => `${p.name}: ${p.description}`).join('\n');
 
   const getRecommendations = async () => {
     if (!preferences) {
@@ -88,7 +90,19 @@ function AiRecommendations() {
 
 export default function BuyerPage() {
   const { user } = useAuth();
-  const [products] = useState<Product[]>(mockProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setIsLoading(true);
+      const fetchedProducts = await getProductsFromFirestore();
+      setProducts(fetchedProducts);
+      setIsLoading(false);
+    };
+
+    fetchProducts();
+  }, []);
 
   return (
     <div className="container py-8">
@@ -97,15 +111,27 @@ export default function BuyerPage() {
         <p className="text-muted-foreground">Discover our curated collection of fine products.</p>
       </div>
       <div className="mt-8">
-        <AiRecommendations />
+        <AiRecommendations products={products} />
       </div>
       <div className="mt-12">
         <h2 className="font-headline text-2xl font-bold">All Products</h2>
-        <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {isLoading ? (
+           <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+             {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="space-y-4">
+                    <Skeleton className="h-[250px] w-full" />
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/4" />
+                </div>
+                ))}
+           </div>
+        ) : (
+          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

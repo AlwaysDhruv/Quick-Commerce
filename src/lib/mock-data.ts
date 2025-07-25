@@ -5,7 +5,7 @@ export type Product = {
   price: number;
   image: string;
   category: string;
-  seller: string;
+  sellerId: string;
   dataAiHint: string;
 };
 
@@ -18,7 +18,7 @@ export const mockProducts: Product[] = [
     image: 'https://placehold.co/400x400.png',
     dataAiHint: 'luxury watch',
     category: 'Accessories',
-    seller: 'Timeless Treasures',
+    sellerId: 'mockSeller',
   },
   {
     id: '2',
@@ -28,7 +28,7 @@ export const mockProducts: Product[] = [
     image: 'https://placehold.co/400x400.png',
     dataAiHint: 'leather wallet',
     category: 'Accessories',
-    seller: 'Artisan Goods',
+    sellerId: 'mockSeller',
   },
   {
     id: '3',
@@ -38,7 +38,7 @@ export const mockProducts: Product[] = [
     image: 'https://placehold.co/400x400.png',
     dataAiHint: 'beard oil',
     category: 'Grooming',
-    seller: 'The Dapper Fellow',
+    sellerId: 'mockSeller',
   },
   {
     id: '4',
@@ -48,7 +48,7 @@ export const mockProducts: Product[] = [
     image: 'https://placehold.co/400x400.png',
     dataAiHint: 'headphones',
     category: 'Electronics',
-    seller: 'SoundScape',
+    sellerId: 'mockSeller',
   },
   {
     id: '5',
@@ -58,7 +58,7 @@ export const mockProducts: Product[] = [
     image: 'https://placehold.co/400x400.png',
     dataAiHint: 'coffee beans',
     category: 'Food & Drink',
-    seller: 'The Daily Grind',
+    sellerId: 'mockSeller',
   },
   {
     id: '6',
@@ -68,6 +68,6 @@ export const mockProducts: Product[] = [
     image: 'https://placehold.co/400x400.png',
     dataAiHint: 'desk lamp',
     category: 'Home Goods',
-    seller: 'Modern Living',
+    sellerId: 'mockSeller',
   },
 ];
