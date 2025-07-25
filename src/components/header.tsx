@@ -1,0 +1,49 @@
+'use client';
+
+import Link from 'next/link';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { useCart } from '@/hooks/use-cart';
+import { ShoppingCart } from 'lucide-react';
+import { Logo } from './logo';
+import { UserNav } from './user-nav';
+import { useAuth } from '@/hooks/use-auth';
+
+export function Header() {
+  const { cartCount } = useCart();
+  const { user } = useAuth();
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center">
+        <Logo />
+        <nav className="ml-6 flex items-center space-x-4 text-sm font-medium">
+          {user?.role === 'buyer' && (
+            <Link href="/buyer" className="text-muted-foreground transition-colors hover:text-foreground">
+              Shop
+            </Link>
+          )}
+           {user?.role === 'seller' && (
+            <Link href="/seller" className="text-muted-foreground transition-colors hover:text-foreground">
+              Dashboard
+            </Link>
+          )}
+        </nav>
+        <div className="flex flex-1 items-center justify-end space-x-4">
+          <Button asChild variant="ghost" className="relative h-9 w-9">
+            <Link href="/cart">
+              <ShoppingCart className="h-5 w-5" />
+              {cartCount > 0 && (
+                <Badge variant="default" className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-accent p-0 text-accent-foreground">
+                  {cartCount}
+                </Badge>
+              )}
+              <span className="sr-only">Shopping Cart</span>
+            </Link>
+          </Button>
+          <UserNav />
+        </div>
+      </div>
+    </header>
+  );
+}

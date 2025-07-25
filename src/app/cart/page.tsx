@@ -1,0 +1,120 @@
+'use client';
+
+import { useCart } from '@/hooks/use-cart';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import Image from 'next/image';
+import { Input } from '@/components/ui/input';
+import { Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
+
+export default function CartPage() {
+  const { cart, removeFromCart, updateQuantity, cartTotal, cartCount, clearCart } = useCart();
+  const { toast } = useToast();
+
+  const handleCheckout = () => {
+    toast({
+      title: 'Checkout Initiated',
+      description: 'Redirecting to secure payment...',
+    });
+    // In a real app, you would redirect to a checkout page.
+    clearCart();
+  }
+
+  if (cartCount === 0) {
+    return (
+      <div className="container flex min-h-[calc(100vh-12rem)] flex-col items-center justify-center text-center">
+        <h1 className="text-3xl font-bold">Your Cart is Empty</h1>
+        <p className="mt-2 text-muted-foreground">Looks like you haven&apos;t added anything to your cart yet.</p>
+        <Button asChild className="mt-6 bg-primary hover:bg-primary/90">
+          <Link href="/buyer">Start Shopping</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container py-12">
+      <h1 className="text-3xl font-bold font-headline mb-8">Your Shopping Cart</h1>
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px]">Product</TableHead>
+                    <TableHead></TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead className="text-center">Quantity</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {cart.map(({ product, quantity }) => (
+                    <TableRow key={product.id}>
+                      <TableCell>
+                        <Image
+                          src={product.image}
+                          alt={product.name}
+                          width={80}
+                          height={80}
+                          className="rounded-md object-cover"
+                          data-ai-hint={product.dataAiHint}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell>${product.price.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={quantity}
+                          onChange={(e) => updateQuantity(product.id, parseInt(e.target.value, 10))}
+                          className="w-20 mx-auto text-center"
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">${(product.price * quantity).toFixed(2)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => removeFromCart(product.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Order Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span>${cartTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Shipping</span>
+                <span>Free</span>
+              </div>
+              <div className="flex justify-between font-bold text-lg">
+                <span>Total</span>
+                <span>${cartTotal.toFixed(2)}</span>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button onClick={handleCheckout} className="w-full bg-primary hover:bg-primary/90">Proceed to Checkout</Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}

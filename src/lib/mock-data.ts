@@ -1,0 +1,73 @@
+export type Product = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category: string;
+  seller: string;
+  dataAiHint: string;
+};
+
+export const mockProducts: Product[] = [
+  {
+    id: '1',
+    name: 'Luxury Chronograph Watch',
+    description: 'A sophisticated timepiece for the modern gentleman. Features a stainless steel case, sapphire crystal glass, and a genuine leather strap.',
+    price: 499.99,
+    image: 'https://placehold.co/400x400.png',
+    dataAiHint: 'luxury watch',
+    category: 'Accessories',
+    seller: 'Timeless Treasures',
+  },
+  {
+    id: '2',
+    name: 'Handcrafted Leather Wallet',
+    description: 'Made from full-grain Italian leather, this wallet combines style and functionality. Ages beautifully over time.',
+    price: 89.99,
+    image: 'https://placehold.co/400x400.png',
+    dataAiHint: 'leather wallet',
+    category: 'Accessories',
+    seller: 'Artisan Goods',
+  },
+  {
+    id: '3',
+    name: 'Organic Beard Oil',
+    description: 'Nourish and style your beard with our blend of natural oils. Promotes healthy growth and a soft, manageable beard.',
+    price: 24.99,
+    image: 'https://placehold.co/400x400.png',
+    dataAiHint: 'beard oil',
+    category: 'Grooming',
+    seller: 'The Dapper Fellow',
+  },
+  {
+    id: '4',
+    name: 'Wireless Noise-Cancelling Headphones',
+    description: 'Immerse yourself in pure audio with these state-of-the-art headphones. Up to 30 hours of battery life.',
+    price: 349.99,
+    image: 'https://placehold.co/400x400.png',
+    dataAiHint: 'headphones',
+    category: 'Electronics',
+    seller: 'SoundScape',
+  },
+  {
+    id: '5',
+    name: 'Gourmet Coffee Bean Sampler',
+    description: 'Explore a world of flavor with this sampler of single-origin coffee beans from around the globe.',
+    price: 45.00,
+    image: 'https://placehold.co/400x400.png',
+    dataAiHint: 'coffee beans',
+    category: 'Food & Drink',
+    seller: 'The Daily Grind',
+  },
+  {
+    id: '6',
+    name: 'Minimalist Desk Lamp',
+    description: 'A sleek, modern LED desk lamp with adjustable brightness and color temperature. Perfect for any workspace.',
+    price: 79.99,
+    image: 'https://placehold.co/400x400.png',
+    dataAiHint: 'desk lamp',
+    category: 'Home Goods',
+    seller: 'Modern Living',
+  },
+];
