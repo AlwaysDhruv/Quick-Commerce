@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, addDoc, collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, addDoc, collection, getDocs, query, where, Timestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import type { User } from '@/hooks/use-auth';
 import type { Product } from './mock-data';
@@ -58,6 +58,25 @@ export const addProductToFirestore = async (productData: Omit<Product, 'id'>) =>
     throw error;
   }
 };
+
+export const updateProductInFirestore = async (productId: string, productData: Partial<Omit<Product, 'id' | 'sellerId'>>) => {
+  try {
+    const productRef = doc(db, 'products', productId);
+    await updateDoc(productRef, productData);
+  } catch (error) {
+    console.error('Error updating product in Firestore: ', error);
+    throw error;
+  }
+}
+
+export const deleteProductFromFirestore = async (productId: string) => {
+  try {
+    await deleteDoc(doc(db, 'products', productId));
+  } catch (error) {
+    console.error('Error deleting product from Firestore: ', error);
+    throw error;
+  }
+}
 
 export const getProductsFromFirestore = async (): Promise<Product[]> => {
   try {
