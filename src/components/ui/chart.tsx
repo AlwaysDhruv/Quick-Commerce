@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Recharts, ResponsiveContainer } from "recharts"
+import { Tooltip, Legend, ResponsiveContainer } from "recharts"
 
 import { cn } from "@/lib/utils"
 
@@ -100,11 +100,11 @@ ${colorConfig
   )
 }
 
-const ChartTooltip = Recharts.Tooltip
+const ChartTooltip = Tooltip
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<typeof Recharts.Tooltip> &
+  React.ComponentProps<typeof Tooltip> &
     React.ComponentProps<"div"> & {
       hideLabel?: boolean
       hideIndicator?: boolean
@@ -256,12 +256,12 @@ const ChartTooltipContent = React.forwardRef<
 )
 ChartTooltipContent.displayName = "ChartTooltip"
 
-const ChartLegend = Recharts.Legend
+const ChartLegend = Legend
 
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> &
-    Pick<Recharts.LegendProps, "payload" | "verticalAlign"> & {
+    Pick<React.ComponentProps<typeof Legend>, "payload" | "verticalAlign"> & {
       hideIcon?: boolean
       nameKey?: string
     }
