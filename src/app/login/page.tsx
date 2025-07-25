@@ -11,12 +11,10 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Invalid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
-  role: z.enum(['buyer', 'seller'], { required_error: 'You must select a role.' }),
 });
 
 export default function LoginPage() {
@@ -29,24 +27,19 @@ export default function LoginPage() {
     defaultValues: {
       email: '',
       password: '',
-      role: 'buyer',
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     // This is a mock login.
     // In a real app, you would verify credentials against a backend.
-    login({ name: 'Demo User', email: values.email, role: values.role });
+    login({ name: 'Demo User', email: values.email, role: 'buyer' });
     toast({
       title: 'Login Successful',
       description: "Welcome back!",
     });
 
-    if (values.role === 'seller') {
-      router.push('/seller');
-    } else {
-      router.push('/buyer');
-    }
+    router.push('/buyer');
   }
 
   return (
@@ -80,36 +73,6 @@ export default function LoginPage() {
                     <FormLabel>Password</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="••••••••" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel>Login as</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex space-x-4"
-                      >
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="buyer" />
-                          </FormControl>
-                          <FormLabel className="font-normal">Buyer</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="seller" />
-                          </FormControl>
-                          <FormLabel className="font-normal">Seller</FormLabel>
-                        </FormItem>
-                      </RadioGroup>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
