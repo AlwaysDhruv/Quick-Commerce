@@ -2,12 +2,11 @@
 
 import { type CartContextType, CartContext, type CartItem } from '@/hooks/use-cart';
 import { type Product } from '@/lib/mock-data';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import React, { useState, useMemo, type ReactNode } from 'react';
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const { toast } = useToast();
 
   const addToCart = (product: Product, quantity: number = 1) => {
     // Check if product is out of stock first
