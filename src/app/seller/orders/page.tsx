@@ -133,37 +133,64 @@ function OrderRow({ order, onOrderDeleted }: { order: Order; onOrderDeleted: () 
         <CollapsibleContent asChild>
           <tr className="bg-muted/50">
             <TableCell colSpan={7} className="p-0">
-               <div className="p-4">
-                <h4 className="font-semibold mb-2">Order Items</h4>
-                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[80px]">Image</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead className="text-center">Quantity</TableHead>
-                      <TableHead className="text-right">Price</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {order.items.map(item => (
-                       <TableRow key={item.product.id}>
-                        <TableCell>
-                           <Image
-                            src={item.product.image}
-                            alt={item.product.name}
-                            width={64}
-                            height={64}
-                            className="rounded-md object-cover"
-                            data-ai-hint={item.product.dataAiHint}
-                          />
-                        </TableCell>
-                        <TableCell>{item.product.name}</TableCell>
-                        <TableCell className="text-center">{item.quantity}</TableCell>
-                        <TableCell className="text-right">${item.product.price.toFixed(2)}</TableCell>
-                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+               <div className="p-6">
+                 <div className="space-y-3">
+                    <div>
+                        <h4 className="font-semibold mb-2">Order Details</h4>
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Order ID</span>
+                                <span className="font-mono text-foreground">{order.id}</span>
+                            </div>
+                             <div className="flex justify-between">
+                                <span className="text-muted-foreground">Order Total</span>
+                                <span className="font-bold text-foreground">${order.total.toFixed(2)}</span>
+                            </div>
+                             <div className="flex justify-between">
+                                <span className="text-muted-foreground">Buyer ID</span>
+                                <span className="font-mono text-foreground">{order.buyerId}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Order Date</span>
+                                <span className="text-foreground">{format(order.createdAt.toDate(), 'PPpp')}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 className="font-semibold mb-2 mt-4">Items</h4>
+                         <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-[80px]">Image</TableHead>
+                              <TableHead>Product</TableHead>
+                              <TableHead className="text-center">Quantity</TableHead>
+                              <TableHead className="text-right">Unit Price</TableHead>
+                              <TableHead className="text-right">Subtotal</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {order.items.map(item => (
+                               <TableRow key={item.product.id}>
+                                <TableCell>
+                                   <Image
+                                    src={item.product.image}
+                                    alt={item.product.name}
+                                    width={64}
+                                    height={64}
+                                    className="rounded-md object-cover"
+                                    data-ai-hint={item.product.dataAiHint}
+                                  />
+                                </TableCell>
+                                <TableCell>{item.product.name}</TableCell>
+                                <TableCell className="text-center">{item.quantity}</TableCell>
+                                <TableCell className="text-right">${item.product.price.toFixed(2)}</TableCell>
+                                <TableCell className="text-right font-medium">${(item.product.price * item.quantity).toFixed(2)}</TableCell>
+                               </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                    </div>
+                 </div>
               </div>
             </TableCell>
           </tr>
@@ -248,3 +275,4 @@ export default function OrdersPage() {
     </div>
   );
 }
+ 
