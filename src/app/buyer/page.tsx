@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { recommendProducts } from '@/ai/flows/recommend-products';
-import { Wand2, Loader2, ShoppingCart, Lightbulb, Filter } from 'lucide-react';
+import { Wand2, Loader2, ShoppingCart, Lightbulb, Filter, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getProductsFromFirestore } from '@/lib/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,6 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
 
 function AiSearch({ products, onSuggestionClick }: { products: Product[], onSuggestionClick: (suggestion: string) => void }) {
   const [preferences, setPreferences] = useState('');
@@ -298,6 +299,7 @@ export default function BuyerPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState({ categories: [] as string[], priceRange: [0, 500] as [number, number] });
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -322,11 +324,12 @@ export default function BuyerPage() {
 
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
+        const searchMatch = searchQuery === '' || product.name.toLowerCase().includes(searchQuery.toLowerCase());
         const categoryMatch = filters.categories.length === 0 || filters.categories.includes(product.category);
         const priceMatch = product.price >= filters.priceRange[0] && product.price <= filters.priceRange[1];
-        return categoryMatch && priceMatch;
+        return searchMatch && categoryMatch && priceMatch;
     });
-  }, [products, filters]);
+  }, [products, filters, searchQuery]);
 
   return (
     <div className="container py-8">
@@ -351,10 +354,24 @@ export default function BuyerPage() {
                  <CartRecommendations allProducts={products} />
                 
                 <div>
-                    <div className="flex justify-between items-center mb-4">
-                      <h2 className="font-headline text-2xl font-bold">All Products ({filteredProducts.length})</h2>
-                       {filters.categories.length > 0 && (
-                          <Button variant="ghost" onClick={() => setFilters(f => ({ ...f, categories: []}))}>Clear Filters</Button>
+                    <div className="flex justify-between items-center mb-6 gap-4">
+                      <div className="relative w-full max-w-sm">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search for products..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                      <h2 className="font-headline text-xl font-bold whitespace-nowrap">
+                        All Products ({filteredProducts.length})
+                      </h2>
+                       {(filters.categories.length > 0 || searchQuery) && (
+                          <Button variant="ghost" onClick={() => {
+                            setFilters(f => ({ ...f, categories: []}));
+                            setSearchQuery('');
+                          }}>Clear Filters</Button>
                        )}
                     </div>
                     {isLoading ? (
