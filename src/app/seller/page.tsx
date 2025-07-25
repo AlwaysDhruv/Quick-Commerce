@@ -233,21 +233,11 @@ export default function SellerDashboard() {
     if (!user) return;
     setIsSeeding(true);
     try {
-      const existingProducts = await getProductsBySeller(user.uid);
-      if (existingProducts.length > 0) {
-        toast({
-            title: "Products Already Exist",
-            description: "Your database already has products. Seeding is not required.",
-            variant: "destructive",
-        });
-        return;
-      }
-
       await Promise.all(sampleProducts.map(p => addProductToFirestore({ ...p, sellerId: user.uid })));
       
       toast({
         title: "Products Seeded!",
-        description: "20 sample products have been added to your store.",
+        description: `${sampleProducts.length} sample products have been added to your store.`,
       });
 
       // Refresh the data on the dashboard
@@ -306,5 +296,3 @@ export default function SellerDashboard() {
     </div>
   );
 }
-
-    
