@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -98,6 +99,96 @@ const sampleProducts = [
       stock: 18,
       image: 'https://placehold.co/400x400.png',
       dataAiHint: 'bluetooth speaker',
+    },
+    {
+      name: 'Matte Ceramic Mug Set',
+      description: 'Set of four minimalist ceramic mugs in a beautiful matte finish. Dishwasher and microwave safe.',
+      price: 40.0,
+      category: 'Kitchenware',
+      stock: 22,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'ceramic mugs',
+    },
+    {
+      name: 'Linen Duvet Cover Set',
+      description: 'A queen-size duvet cover set made from 100% natural linen. Soft, breathable, and durable.',
+      price: 150.0,
+      category: 'Bedding',
+      stock: 10,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'linen bedding',
+    },
+    {
+      name: 'Electric Gooseneck Kettle',
+      description: 'A variable temperature electric kettle with a precision-pour gooseneck spout, perfect for tea and coffee.',
+      price: 85.0,
+      category: 'Kitchenware',
+      stock: 15,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'electric kettle',
+    },
+    {
+      name: 'Felt Desk Mat',
+      description: 'A large, soft felt desk mat that protects your desk and provides a smooth surface for your mouse.',
+      price: 28.0,
+      category: 'Office',
+      stock: 35,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'desk mat',
+    },
+    {
+      name: 'Stainless Steel Water Bottle',
+      description: 'A 32oz insulated stainless steel water bottle that keeps drinks cold for 24 hours or hot for 12 hours.',
+      price: 32.0,
+      category: 'Outdoor Gear',
+      stock: 40,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'water bottle',
+    },
+    {
+      name: 'Wireless Charging Stand',
+      description: 'A sleek 3-in-1 wireless charging stand for your phone, earbuds, and smartwatch. Fast and convenient.',
+      price: 55.0,
+      category: 'Electronics',
+      stock: 25,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'wireless charger',
+    },
+    {
+      name: 'Indoor Herb Garden Kit',
+      description: 'An easy-to-use indoor herb garden kit with everything you need to grow your own basil, mint, and cilantro.',
+      price: 38.0,
+      category: 'Gardening',
+      stock: 18,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'herb garden',
+    },
+    {
+      name: 'Cashmere Throw Blanket',
+      description: 'A luxurious and incredibly soft cashmere throw blanket, perfect for cozying up on the couch.',
+      price: 250.0,
+      category: 'Home Decor',
+      stock: 5,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'cashmere blanket',
+    },
+    {
+      name: 'Noise-Cancelling Headphones',
+      description: 'Over-ear noise-cancelling headphones with superior sound quality and 30 hours of playtime.',
+      price: 180.0,
+      category: 'Electronics',
+      stock: 12,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'headphones',
+    },
+    {
+      name: 'French Press Coffee Maker',
+      description: 'A classic 8-cup French press with a durable borosilicate glass carafe and a stainless steel filter.',
+      price: 30.0,
+      category: 'Kitchenware',
+      stock: 20,
+      image: 'https://placehold.co/400x400.png',
+      dataAiHint: 'french press',
     }
   ];
 
@@ -156,7 +247,7 @@ export default function SellerDashboard() {
       
       toast({
         title: "Products Seeded!",
-        description: "10 sample products have been added to your store.",
+        description: "20 sample products have been added to your store.",
       });
 
       // Refresh the data on the dashboard
@@ -215,3 +306,5 @@ export default function SellerDashboard() {
     </div>
   );
 }
+
+    
