@@ -117,14 +117,11 @@ export type Order = {
 export const addOrderToFirestore = async (orderData: Omit<Order, 'id'>) => {
   try {
     await runTransaction(db, async (transaction) => {
-      // 1. Create the new order document
+      // 1. Create the new order document reference ahead of time
       const orderRef = doc(collection(db, 'orders'));
-      transaction.set(orderRef, {
-        ...orderData,
-        createdAt: Timestamp.now(),
-      });
 
-      // 2. Decrement stock for each product in the order
+      // 2. READ phase: Read all product documents first
+      const productUpdates = [];
       for (const item of orderData.items) {
         const productRef = doc(db, 'products', item.product.id);
         const productDoc = await transaction.get(productRef);
@@ -139,14 +136,21 @@ export const addOrderToFirestore = async (orderData: Omit<Order, 'id'>) => {
         if (newStock < 0) {
           throw new Error(`Not enough stock for ${item.product.name}.`);
         }
-
-        transaction.update(productRef, { stock: newStock });
+        
+        productUpdates.push({ ref: productRef, newStock });
       }
-    });
 
-    // The transaction was successful if we get here.
-    // The orderRef.id is not available outside the transaction, so we can't return it directly.
-    // We could refactor to return it if needed, but for now we'll return void.
+      // 3. WRITE phase: Perform all updates and the set
+      for (const update of productUpdates) {
+        transaction.update(update.ref, { stock: update.newStock });
+      }
+
+      // Finally, create the order document
+      transaction.set(orderRef, {
+        ...orderData,
+        createdAt: Timestamp.now(),
+      });
+    });
     
   } catch (error) {
     console.error('Error adding order to Firestore: ', error);
