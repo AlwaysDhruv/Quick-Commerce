@@ -19,6 +19,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 function AiSearch({ products, onSuggestionClick }: { products: Product[], onSuggestionClick: (suggestion: string) => void }) {
   const [preferences, setPreferences] = useState('');
@@ -336,9 +337,13 @@ export default function BuyerPage() {
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
             <aside className="md:col-span-1">
-                <div className="space-y-6 sticky top-24">
-                   <AiSearch products={products} onSuggestionClick={handleAiSuggestion} />
-                   <ProductFilters products={products} filters={filters} onFilterChange={setFilters} />
+                <div className="sticky top-24">
+                  <ScrollArea className="h-[calc(100vh-10rem)] pr-6">
+                    <div className="space-y-6">
+                      <AiSearch products={products} onSuggestionClick={handleAiSuggestion} />
+                      <ProductFilters products={products} filters={filters} onFilterChange={setFilters} />
+                    </div>
+                  </ScrollArea>
                 </div>
             </aside>
 
