@@ -1,8 +1,10 @@
 'use client';
 
 import { createContext, useContext } from 'react';
+import type { UserCredential } from 'firebase/auth';
 
 export type User = {
+  uid: string;
   name: string;
   email: string;
   role: 'buyer' | 'seller';
@@ -10,8 +12,10 @@ export type User = {
 
 export type AuthContextType = {
   user: User | null;
-  login: (user: User) => void;
-  logout: () => void;
+  loading: boolean;
+  login: (email: string, pass: string) => Promise<UserCredential>;
+  register: (email: string, pass: string, name: string, role: 'buyer' | 'seller') => Promise<UserCredential>;
+  logout: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

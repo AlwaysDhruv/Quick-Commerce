@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
+import React from 'react';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -22,7 +23,7 @@ const formSchema = z.object({
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { register, user } = useAuth();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -35,20 +36,32 @@ export default function RegisterPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // This is a mock registration.
-    login({ name: values.name, email: values.email, role: values.role });
-    toast({
-      title: 'Registration Successful',
-      description: 'Your account has been created.',
-    });
-    
-    if (values.role === 'seller') {
-      router.push('/seller');
-    } else {
-      router.push('/buyer');
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const userCredential = await register(values.email, values.password, values.name, values.role);
+       if (userCredential) {
+        toast({
+          title: 'Registration Successful',
+          description: 'Your account has been created.',
+        });
+        // Redirect is handled by AuthProvider
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        title: 'Registration Failed',
+        description: error.message || 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
     }
   }
+
+  // If user is already logged in, redirect them
+  React.useEffect(() => {
+    if (user) {
+      router.push(user.role === 'seller' ? '/seller' : '/buyer');
+    }
+  }, [user, router]);
 
   return (
     <div className="container flex min-h-[calc(100vh-4rem)] items-center justify-center py-12">
@@ -67,7 +80,7 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" {...field} />
+                      <Input placeholder="John Doe" {...field} disabled={form.formState.isSubmitting}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -80,7 +93,7 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" {...field} />
+                      <Input placeholder="name@example.com" {...field} disabled={form.formState.isSubmitting}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -93,7 +106,7 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input type="password" placeholder="••••••••" {...field} disabled={form.formState.isSubmitting}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -110,6 +123,7 @@ export default function RegisterPage() {
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                         className="flex space-x-4"
+                        disabled={form.formState.isSubmitting}
                       >
                         <FormItem className="flex items-center space-x-2 space-y-0">
                           <FormControl>
@@ -129,8 +143,8 @@ export default function RegisterPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-                Create Account
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Creating Account...' : 'Create Account'}
               </Button>
             </form>
           </Form>

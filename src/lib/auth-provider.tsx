@@ -1,24 +1,70 @@
 'use client';
 
-import { type AuthContextType, AuthContext, type User } from '@/hooks/use-auth';
-import React, { useState, type ReactNode } from 'react';
+import React, { useState, useEffect, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, type User as FirebaseUser, type UserCredential } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { addUserToFirestore, getUserFromFirestore } from '@/lib/firestore';
+import { AuthContext, type AuthContextType, type User } from '@/hooks/use-auth';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
-  const login = (userData: User) => {
-    setUser(userData);
-    // In a real app, you'd also set a token in localStorage/cookies
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      if (firebaseUser) {
+        const firestoreUser = await getUserFromFirestore(firebaseUser.uid);
+        if (firestoreUser) {
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email!,
+            name: firestoreUser.name,
+            role: firestoreUser.role,
+          });
+          // Redirect based on role
+          if (window.location.pathname === '/login' || window.location.pathname === '/register' || window.location.pathname === '/') {
+             router.push(firestoreUser.role === 'seller' ? '/seller' : '/buyer');
+          }
+        } else {
+          // If user exists in Auth but not Firestore (e.g., manual deletion), log them out.
+          await signOut(auth);
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  const login = (email: string, pass: string): Promise<UserCredential> => {
+    setLoading(true);
+    return signInWithEmailAndPassword(auth, email, pass);
   };
 
-  const logout = () => {
+  const register = async (email: string, pass: string, name: string, role: 'buyer' | 'seller'): Promise<UserCredential> => {
+    setLoading(true);
+    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+    await addUserToFirestore(userCredential.user.uid, name, email, role);
+    return userCredential;
+  };
+
+  const logout = async () => {
+    await signOut(auth);
     setUser(null);
-    // In a real app, you'd also clear the token
+    setLoading(false);
+    router.push('/login');
   };
 
   const value: AuthContextType = {
     user,
+    loading,
     login,
+    register,
     logout,
   };
 

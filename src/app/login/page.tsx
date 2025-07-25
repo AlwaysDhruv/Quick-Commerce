@@ -19,7 +19,7 @@ const formSchema = z.object({
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -30,17 +30,33 @@ export default function LoginPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // This is a mock login.
-    // In a real app, you would verify credentials against a backend.
-    login({ name: 'Demo User', email: values.email, role: 'buyer' });
-    toast({
-      title: 'Login Successful',
-      description: "Welcome back!",
-    });
-
-    router.push('/buyer');
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const userCredential = await login(values.email, values.password);
+      if (userCredential) {
+        toast({
+          title: 'Login Successful',
+          description: "Welcome back!",
+        });
+        // The redirect is handled by the AuthProvider now
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        title: 'Login Failed',
+        description: error.message || 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+    }
   }
+
+  // If user is already logged in, redirect them
+  React.useEffect(() => {
+    if (user) {
+      router.push(user.role === 'seller' ? '/seller' : '/buyer');
+    }
+  }, [user, router]);
+
 
   return (
     <div className="container flex min-h-[calc(100vh-4rem)] items-center justify-center py-12">
@@ -59,7 +75,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" {...field} />
+                      <Input placeholder="name@example.com" {...field} disabled={form.formState.isSubmitting} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -72,14 +88,14 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input type="password" placeholder="••••••••" {...field} disabled={form.formState.isSubmitting} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-                Sign In
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
           </Form>
