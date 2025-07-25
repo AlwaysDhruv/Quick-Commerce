@@ -21,13 +21,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import React from 'react';
 
 
-function DeleteOrderDialog({ order, onOrderDeleted }: { order: Order; onOrderDeleted: () => void }) {
+function DeleteOrderDialog({ order, onOrderDeleted, children }: { order: Order; onOrderDeleted: () => void, children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
@@ -56,15 +57,9 @@ function DeleteOrderDialog({ order, onOrderDeleted }: { order: Order; onOrderDel
 
   return (
      <AlertDialog open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <DropdownMenuItem
-          className="text-destructive"
-          onSelect={(e) => e.preventDefault()}
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuTrigger>
+      <AlertDialogTrigger asChild>
+        {children}
+      </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -124,7 +119,15 @@ function OrderRow({ order, onOrderDeleted }: { order: Order; onOrderDeleted: () 
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DeleteOrderDialog order={order} onOrderDeleted={onOrderDeleted} />
+                <DeleteOrderDialog order={order} onOrderDeleted={onOrderDeleted}>
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                </DeleteOrderDialog>
               </DropdownMenuContent>
             </DropdownMenu>
           </TableCell>
