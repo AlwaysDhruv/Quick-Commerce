@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
+import { Logo } from '@/components/logo';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Invalid email address.' }),
@@ -66,7 +67,10 @@ export default function LoginPage() {
 
 
   return (
-    <div className="container flex min-h-[calc(100vh-4rem)] items-center justify-center py-12">
+    <div className="container flex min-h-screen flex-col items-center justify-center py-12">
+      <div className="mb-8">
+        <Logo />
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="font-headline text-2xl">Welcome Back</CardTitle>

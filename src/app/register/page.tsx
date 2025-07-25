@@ -13,6 +13,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
+import { Logo } from '@/components/logo';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -64,7 +65,10 @@ export default function RegisterPage() {
   }, [user, router]);
 
   return (
-    <div className="container flex min-h-[calc(100vh-4rem)] items-center justify-center py-12">
+    <div className="container flex min-h-screen flex-col items-center justify-center py-12">
+      <div className="mb-8">
+        <Logo />
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="font-headline text-2xl">Create an Account</CardTitle>
