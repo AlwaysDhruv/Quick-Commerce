@@ -49,6 +49,17 @@ export const getUsersCountFromFirestore = async (): Promise<number> => {
   }
 }
 
+export const getBuyerCountFromFirestore = async (): Promise<number> => {
+  try {
+    const q = query(collection(db, 'users'), where('role', '==', 'buyer'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.size;
+  } catch (error) {
+    console.error('Error getting buyers count from Firestore: ', error);
+    throw error;
+  }
+}
+
 // Product Functions
 export const addProductToFirestore = async (productData: Omit<Product, 'id'>) => {
   try {

@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
-import { getOrdersBySeller, getProductsBySeller, getUsersCountFromFirestore, addProductToFirestore } from '@/lib/firestore';
+import { getOrdersBySeller, getProductsBySeller, getBuyerCountFromFirestore, addProductToFirestore } from '@/lib/firestore';
 import { DollarSign, Package, ShoppingCart, Users, Loader2, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -197,7 +197,7 @@ export default function SellerDashboard() {
   const [productCount, setProductCount] = useState<number | null>(null);
   const [orderCount, setOrderCount] = useState<number | null>(null);
   const [totalRevenue, setTotalRevenue] = useState<number | null>(null);
-  const [userCount, setUserCount] = useState<number | null>(null);
+  const [buyerCount, setBuyerCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
   const { toast } = useToast();
@@ -206,16 +206,16 @@ export default function SellerDashboard() {
     if (user) {
       setLoading(true);
       try {
-        const [products, orders, users] = await Promise.all([
+        const [products, orders, buyers] = await Promise.all([
           getProductsBySeller(user.uid),
           getOrdersBySeller(user.uid),
-          getUsersCountFromFirestore(),
+          getBuyerCountFromFirestore(),
         ]);
 
         setProductCount(products.length);
         setOrderCount(orders.length);
         setTotalRevenue(orders.reduce((sum, order) => sum + order.total, 0));
-        setUserCount(users);
+        setBuyerCount(buyers);
 
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
@@ -233,11 +233,24 @@ export default function SellerDashboard() {
     if (!user) return;
     setIsSeeding(true);
     try {
-      await Promise.all(sampleProducts.map(p => addProductToFirestore({ ...p, sellerId: user.uid })));
+      const existingProducts = await getProductsBySeller(user.uid);
+      const existingProductNames = new Set(existingProducts.map(p => p.name));
+      const productsToAdd = sampleProducts.filter(p => !existingProductNames.has(p.name));
+      
+      if (productsToAdd.length === 0) {
+         toast({
+          title: "Products Already Seeded",
+          description: "All sample products already exist in your store.",
+        });
+        setIsSeeding(false);
+        return;
+      }
+
+      await Promise.all(productsToAdd.map(p => addProductToFirestore({ ...p, sellerId: user.uid })));
       
       toast({
         title: "Products Seeded!",
-        description: `${sampleProducts.length} sample products have been added to your store.`,
+        description: `${productsToAdd.length} new sample products have been added.`,
       });
 
       // Refresh the data on the dashboard
@@ -291,7 +304,7 @@ export default function SellerDashboard() {
         {renderStatCard('Total Revenue', totalRevenue !== null ? `$${totalRevenue.toLocaleString()}` : 'N/A', <DollarSign className="h-4 w-4 text-muted-foreground" />)}
         {renderStatCard('Orders', orderCount !== null ? `+${orderCount}` : 'N/A', <ShoppingCart className="h-4 w-4 text-muted-foreground" />)}
         {renderStatCard('Products', productCount !== null ? productCount : 'N/A', <Package className="h-4 w-4 text-muted-foreground" />, 'Total products listed')}
-        {renderStatCard('Total Users', userCount !== null ? userCount : 'N/A', <Users className="h-4 w-4 text-muted-foreground" />, 'Total registered users')}
+        {renderStatCard('Total Buyers', buyerCount !== null ? buyerCount : 'N/A', <Users className="h-4 w-4 text-muted-foreground" />, 'Total registered buyers')}
       </div>
     </div>
   );
