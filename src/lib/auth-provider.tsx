@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, type ReactNode } from 'react';
@@ -22,6 +23,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             email: firebaseUser.email!,
             name: firestoreUser.name,
             role: firestoreUser.role,
+            associatedSellerId: firestoreUser.associatedSellerId,
+            associatedSellerName: firestoreUser.associatedSellerName,
           };
           setUser(userData);
            // Redirect on initial load if user is already logged in
@@ -30,7 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (firestoreUser.role === 'seller') {
               redirectPath = '/seller';
             } else if (firestoreUser.role === 'delivery') {
-              redirectPath = '/delivery';
+              redirectPath = '/delivery/orders';
             }
             router.push(redirectPath);
           }
@@ -56,7 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (firestoreUser.role === 'seller') {
             redirectPath = '/seller';
         } else if (firestoreUser.role === 'delivery') {
-            redirectPath = '/delivery';
+            redirectPath = '/delivery/orders';
         }
         router.push(redirectPath);
     } else {
@@ -71,7 +74,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     await addUserToFirestore(userCredential.user.uid, name, email, role);
-    // The onAuthStateChanged listener will handle the redirect for new registrations
+    const firestoreUser = await getUserFromFirestore(userCredential.user.uid);
+     if (firestoreUser) {
+        let redirectPath = '/buyer';
+        if (firestoreUser.role === 'seller') {
+            redirectPath = '/seller';
+        } else if (firestoreUser.role === 'delivery') {
+            redirectPath = '/delivery/orders';
+        }
+        router.push(redirectPath);
+    }
     return userCredential;
   };
 

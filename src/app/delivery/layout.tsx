@@ -9,8 +9,8 @@ import { Logo } from '@/components/logo';
 import { useAuth } from '@/hooks/use-auth';
 
 const navItems = [
-  { href: '/delivery', label: 'Dashboard', icon: Home },
   { href: '/delivery/orders', label: 'My Orders', icon: Truck },
+  { href: '/delivery', label: 'Dashboard', icon: Home },
   { href: '/delivery/shops', label: 'Find Shops', icon: Store },
 ];
 
