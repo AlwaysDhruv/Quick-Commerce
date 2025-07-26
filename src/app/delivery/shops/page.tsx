@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getAllSellers, createDeliveryRequest, getDeliveryRequestsForDeliveryPerson, type DeliveryRequest } from '@/lib/firestore';
 import { useAuth, type User } from '@/hooks/use-auth';
-import { Loader2, CheckCircle, Send } from 'lucide-react';
+import { Loader2, CheckCircle, Send, XCircle } from 'lucide-react';
 
 export default function FindShopsPage() {
   const [sellers, setSellers] = useState<User[]>([]);
@@ -40,7 +40,13 @@ export default function FindShopsPage() {
   };
 
   useEffect(() => {
+    // Check if the user is already associated with a seller.
+    if (user?.associatedSellerId) {
+      // If so, maybe redirect them or show a different UI.
+      // For now, we'll just let them see the shops page.
+    }
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const handleSendRequest = async (seller: User) => {
@@ -85,6 +91,22 @@ export default function FindShopsPage() {
     );
   }
 
+  if (user?.associatedSellerId) {
+     return (
+        <div className="space-y-6 text-center">
+             <div>
+                <h1 className="text-2xl font-bold font-headline">Find Shops</h1>
+                <p className="text-muted-foreground mt-2">You are already part of a team. To join another, you must first leave your current team.</p>
+            </div>
+             <Card className="max-w-md mx-auto">
+                <CardHeader>
+                    <CardTitle>You&apos;re on Team {user.associatedSellerName}!</CardTitle>
+                </CardHeader>
+             </Card>
+        </div>
+     )
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -95,11 +117,11 @@ export default function FindShopsPage() {
         {sellers.map((seller) => {
           const status = getRequestStatusForSeller(seller.uid);
           return (
-            <Card key={seller.uid}>
+            <Card key={seller.uid} className="flex flex-col">
               <CardHeader>
                 <CardTitle>{seller.name}'s Shop</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-grow flex items-end justify-end">
                 <div className="flex justify-end">
                   {status === 'pending' ? (
                     <Button variant="outline" disabled>
@@ -107,18 +129,20 @@ export default function FindShopsPage() {
                       Request Sent
                     </Button>
                   ) : status === 'approved' ? (
-                     <Button variant="secondary" disabled className="bg-green-500/20 text-green-500">
+                     <Button variant="secondary" disabled className="bg-green-600/90 text-primary-foreground hover:bg-green-600/90">
                       <CheckCircle className="mr-2" />
                       Approved
                     </Button>
                   ) : status === 'rejected' ? (
                      <Button variant="destructive" disabled>
+                      <XCircle className="mr-2" />
                       Request Rejected
                     </Button>
                   ) : (
                     <Button
                       onClick={() => handleSendRequest(seller)}
                       disabled={isSubmitting === seller.uid}
+                      className="bg-primary hover:bg-primary/90"
                     >
                       {isSubmitting === seller.uid ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -137,4 +161,3 @@ export default function FindShopsPage() {
     </div>
   );
 }
-
