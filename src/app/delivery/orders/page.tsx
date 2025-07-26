@@ -6,17 +6,41 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { getOrdersBySeller, type Order } from '@/lib/firestore';
+import { getOrdersBySeller, updateOrderStatus, type Order } from '@/lib/firestore';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2, ChevronDown } from 'lucide-react';
+import { Loader2, ChevronDown, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import React from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 
-function OrderRow({ order }: { order: Order }) {
+function OrderRow({ order, onOrderUpdated }: { order: Order, onOrderUpdated: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const { toast } = useToast();
+
+  const handleStatusUpdate = async (status: Order['status']) => {
+    setIsUpdating(true);
+    try {
+        await updateOrderStatus(order.id, status);
+        toast({
+            title: 'Order Updated',
+            description: `Order ...${order.id.slice(-6)} has been marked as ${status}.`
+        });
+        onOrderUpdated();
+    } catch (error) {
+        console.error(error);
+        toast({
+            title: 'Error',
+            description: 'Failed to update order status.',
+            variant: 'destructive',
+        });
+    } finally {
+        setIsUpdating(false);
+    }
+  }
 
   return (
     <React.Fragment>
@@ -29,6 +53,7 @@ function OrderRow({ order }: { order: Order }) {
             <Badge
               className={cn(
                 order.status === 'Shipped' && 'bg-blue-500/20 text-blue-500',
+                order.status === 'Out for Delivery' && 'bg-orange-500/20 text-orange-500',
                 order.status === 'Processing' && 'bg-yellow-500/20 text-yellow-500',
                 order.status === 'Delivered' && 'bg-green-500/20 text-green-500'
               )}
@@ -106,6 +131,14 @@ function OrderRow({ order }: { order: Order }) {
                           </TableBody>
                         </Table>
                     </div>
+                    <div className="flex justify-end pt-4">
+                        {order.status !== 'Delivered' && (
+                             <Button onClick={() => handleStatusUpdate('Delivered')} disabled={isUpdating}>
+                                {isUpdating ? <Loader2 className="mr-2 animate-spin" /> : <CheckCircle className="mr-2" /> }
+                                Mark as Delivered
+                            </Button>
+                        )}
+                    </div>
                  </div>
               </div>
             </TableCell>
@@ -178,7 +211,7 @@ export default function DeliveryOrdersPage() {
                 </TableRow>
               ) : (
                 orders.map((order) => (
-                  <OrderRow key={order.id} order={order} />
+                  <OrderRow key={order.id} order={order} onOrderUpdated={fetchOrders} />
                 ))
               )}
             </TableBody>
@@ -188,4 +221,3 @@ export default function DeliveryOrdersPage() {
     </div>
   );
 }
-

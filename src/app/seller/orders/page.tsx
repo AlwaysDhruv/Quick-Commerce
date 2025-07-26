@@ -6,11 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { getOrdersBySeller, deleteOrderFromFirestore, type Order } from '@/lib/firestore';
+import { getOrdersBySeller, updateOrderStatus, deleteOrderFromFirestore, type Order } from '@/lib/firestore';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2, MoreHorizontal, Trash2, ChevronDown } from 'lucide-react';
+import { Loader2, MoreHorizontal, Trash2, ChevronDown, CheckCircle, Truck } from 'lucide-react';
 import { format } from 'date-fns';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -21,7 +21,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
@@ -57,9 +56,7 @@ function DeleteOrderDialog({ order, onOrderDeleted, children }: { order: Order; 
 
   return (
      <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
         {children}
-      </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -79,8 +76,32 @@ function DeleteOrderDialog({ order, onOrderDeleted, children }: { order: Order; 
   )
 }
 
-function OrderRow({ order, onOrderDeleted }: { order: Order; onOrderDeleted: () => void }) {
+function OrderRow({ order, onOrderUpdated }: { order: Order; onOrderUpdated: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleStatusUpdate = async (status: Order['status']) => {
+    setIsUpdating(true);
+    try {
+      await updateOrderStatus(order.id, status);
+      toast({
+        title: 'Order Status Updated',
+        description: `Order ...${order.id.slice(-6)} is now ${status}.`
+      });
+      onOrderUpdated();
+    } catch(error) {
+       console.error(error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update order status.',
+        variant: 'destructive',
+      });
+    } finally {
+        setIsUpdating(false);
+    }
+  }
+
 
   return (
     <React.Fragment>
@@ -93,6 +114,7 @@ function OrderRow({ order, onOrderDeleted }: { order: Order; onOrderDeleted: () 
             <Badge
               className={cn(
                 order.status === 'Shipped' && 'bg-blue-500/20 text-blue-500',
+                order.status === 'Out for Delivery' && 'bg-orange-500/20 text-orange-500',
                 order.status === 'Processing' && 'bg-yellow-500/20 text-yellow-500',
                 order.status === 'Delivered' && 'bg-green-500/20 text-green-500'
               )}
@@ -119,13 +141,35 @@ function OrderRow({ order, onOrderDeleted }: { order: Order; onOrderDeleted: () 
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DeleteOrderDialog order={order} onOrderDeleted={onOrderDeleted}>
+                 <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                        <Truck className="mr-2" />
+                        Update Status
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                        <DropdownMenuSubContent>
+                             <DropdownMenuItem onClick={() => handleStatusUpdate('Shipped')} disabled={isUpdating}>
+                                Shipped
+                            </DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => handleStatusUpdate('Out for Delivery')} disabled={isUpdating}>
+                                Out for Delivery
+                            </DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => handleStatusUpdate('Delivered')} disabled={isUpdating}>
+                                Delivered
+                            </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                </DropdownMenuSub>
+                <DeleteOrderDialog order={order} onOrderDeleted={onOrderUpdated}>
                     <DropdownMenuItem
                       className="text-destructive"
-                      onSelect={(e) => e.preventDefault()}
+                      onSelect={(e) => {e.preventDefault()}}
+                      asChild
                     >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
+                        <AlertDialogTrigger className="w-full">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                             Delete
+                        </AlertDialogTrigger>
                     </DropdownMenuItem>
                 </DeleteOrderDialog>
               </DropdownMenuContent>
@@ -266,7 +310,7 @@ export default function OrdersPage() {
                 </TableRow>
               ) : (
                 orders.map((order) => (
-                  <OrderRow key={order.id} order={order} onOrderDeleted={fetchOrders} />
+                  <OrderRow key={order.id} order={order} onOrderUpdated={fetchOrders} />
                 ))
               )}
             </TableBody>

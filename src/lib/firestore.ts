@@ -186,7 +186,7 @@ export type Order = {
   buyerName: string;
   items: CartItem[];
   total: number;
-  status: 'Processing' | 'Shipped' | 'Delivered';
+  status: 'Processing' | 'Shipped' | 'Out for Delivery' | 'Delivered';
   createdAt: Timestamp;
   sellerId: string;
   deliveryPersonId?: string | null;
@@ -253,6 +253,16 @@ export const deleteOrderFromFirestore = async (orderId: string) => {
     throw error;
   }
 };
+
+export const updateOrderStatus = async (orderId: string, status: Order['status']) => {
+  try {
+    const orderRef = doc(db, 'orders', orderId);
+    await updateDoc(orderRef, { status });
+  } catch (error) {
+    console.error('Error updating order status: ', error);
+    throw error;
+  }
+}
 
 
 // --- DELIVERY REQUEST ---
