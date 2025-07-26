@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { getProductsBySeller, getSellerProfile } from '@/lib/firestore';
 import type { Product } from '@/lib/mock-data';
 import { ProductCard } from '@/components/product-card';
@@ -9,7 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Frown } from 'lucide-react';
 
-export default function SellerProfilePage({ params: { sellerId } }: { params: { sellerId: string } }) {
+export default function SellerProfilePage({ params }: { params: { sellerId: string } }) {
+  const { sellerId } = use(params);
   const [sellerName, setSellerName] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
