@@ -7,14 +7,14 @@ export type User = {
   uid: string;
   name: string;
   email: string;
-  role: 'buyer' | 'seller';
+  role: 'buyer' | 'seller' | 'delivery';
 };
 
 export type AuthContextType = {
   user: User | null;
   loading: boolean;
   login: (email: string, pass: string) => Promise<UserCredential>;
-  register: (email: string, pass: string, name: string, role: 'buyer' | 'seller') => Promise<UserCredential>;
+  register: (email: string, pass: string, name: string, role: 'buyer' | 'seller' | 'delivery') => Promise<UserCredential>;
   logout: () => Promise<void>;
 };
 

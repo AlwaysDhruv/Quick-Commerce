@@ -14,6 +14,20 @@ export function Header() {
   const { cartCount } = useCart();
   const { user } = useAuth();
 
+  const getDashboardLink = () => {
+    if (!user) return null;
+    switch (user.role) {
+      case 'buyer':
+        return "/buyer";
+      case 'seller':
+        return "/seller";
+      case 'delivery':
+        return "/delivery";
+      default:
+        return "/";
+    }
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
@@ -24,8 +38,8 @@ export function Header() {
               Shop
             </Link>
           )}
-           {user?.role === 'seller' && (
-            <Link href="/seller" className="text-muted-foreground transition-colors hover:text-foreground">
+           {user && user.role !== 'buyer' && (
+            <Link href={getDashboardLink()!} className="text-muted-foreground transition-colors hover:text-foreground">
               Dashboard
             </Link>
           )}

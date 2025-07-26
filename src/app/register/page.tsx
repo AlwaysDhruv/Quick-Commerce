@@ -20,7 +20,7 @@ const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
   email: z.string().email({ message: 'Invalid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
-  role: z.enum(['buyer', 'seller'], { required_error: 'You must select a role.' }),
+  role: z.enum(['buyer', 'seller', 'delivery'], { required_error: 'You must select a role.' }),
 });
 
 export default function RegisterPage() {
@@ -67,7 +67,13 @@ export default function RegisterPage() {
   // If user is already logged in, redirect them
   React.useEffect(() => {
     if (user) {
-      router.push(user.role === 'seller' ? '/seller' : '/buyer');
+      let redirectPath = '/buyer';
+        if (user.role === 'seller') {
+            redirectPath = '/seller';
+        } else if (user.role === 'delivery') {
+            redirectPath = '/delivery';
+        }
+      router.push(redirectPath);
     }
   }, [user, router]);
 
@@ -79,7 +85,7 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="font-headline text-2xl">Create an Account</CardTitle>
-          <CardDescription>Join SwiftShopper today. It&apos;s free and only takes a minute.</CardDescription>
+          <CardDescription>Join SwiftShopper today. It's free and only takes a minute.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -147,6 +153,12 @@ export default function RegisterPage() {
                             <RadioGroupItem value="seller" />
                           </FormControl>
                           <FormLabel className="font-normal">Seller</FormLabel>
+                        </FormItem>
+                         <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="delivery" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Delivery</FormLabel>
                         </FormItem>
                       </RadioGroup>
                     </FormControl>

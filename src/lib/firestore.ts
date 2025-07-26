@@ -5,7 +5,7 @@ import type { User } from '@/hooks/use-auth';
 import type { Product } from './mock-data';
 import { CartItem } from '@/hooks/use-cart';
 
-export const addUserToFirestore = async (userId: string, name: string, email: string, role: 'buyer' | 'seller') => {
+export const addUserToFirestore = async (userId: string, name: string, email: string, role: 'buyer' | 'seller' | 'delivery') => {
   try {
     await setDoc(doc(db, 'users', userId), {
       name,

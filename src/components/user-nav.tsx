@@ -32,6 +32,20 @@ export function UserNav() {
     router.push('/');
   };
 
+  const getDashboardLink = () => {
+    if (!user) return "/";
+    switch (user.role) {
+      case 'buyer':
+        return "/buyer";
+      case 'seller':
+        return "/seller";
+      case 'delivery':
+        return "/delivery";
+      default:
+        return "/";
+    }
+  }
+
   if (!isMounted) {
     return <Skeleton className="h-8 w-8" />;
   }
@@ -79,7 +93,7 @@ export function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href={user.role === 'seller' ? '/seller' : '/buyer'}>
+            <Link href={getDashboardLink()}>
               <LayoutDashboard className="mr-2 h-4 w-4" />
               <span>Dashboard</span>
             </Link>

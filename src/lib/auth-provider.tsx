@@ -26,7 +26,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(userData);
            // Redirect on initial load if user is already logged in
           if (['/login', '/register', '/'].includes(window.location.pathname)) {
-            router.push(firestoreUser.role === 'seller' ? '/seller' : '/buyer');
+            let redirectPath = '/buyer';
+            if (firestoreUser.role === 'seller') {
+              redirectPath = '/seller';
+            } else if (firestoreUser.role === 'delivery') {
+              redirectPath = '/delivery';
+            }
+            router.push(redirectPath);
           }
         } else {
           await signOut(auth);
@@ -46,7 +52,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, pass);
     const firestoreUser = await getUserFromFirestore(userCredential.user.uid);
     if (firestoreUser) {
-        router.push(firestoreUser.role === 'seller' ? '/seller' : '/buyer');
+        let redirectPath = '/buyer';
+        if (firestoreUser.role === 'seller') {
+            redirectPath = '/seller';
+        } else if (firestoreUser.role === 'delivery') {
+            redirectPath = '/delivery';
+        }
+        router.push(redirectPath);
     } else {
         // This case is unlikely if registration is working, but good to handle
         await signOut(auth);
@@ -55,7 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return userCredential;
   };
 
-  const register = async (email: string, pass: string, name: string, role: 'buyer' | 'seller'): Promise<UserCredential> => {
+  const register = async (email: string, pass: string, name: string, role: 'buyer' | 'seller' | 'delivery'): Promise<UserCredential> => {
     setLoading(true);
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     await addUserToFirestore(userCredential.user.uid, name, email, role);
