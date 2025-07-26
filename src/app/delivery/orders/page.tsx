@@ -48,7 +48,6 @@ function OrderRow({ order, onOrderUpdated }: { order: Order, onOrderUpdated: () 
           <TableCell className="font-medium">...{order.id.slice(-6)}</TableCell>
           <TableCell>{order.buyerName}</TableCell>
           <TableCell>{format(order.createdAt.toDate(), 'PPP')}</TableCell>
-          <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
           <TableCell className="text-center">
             <Badge
               className={cn(
@@ -73,7 +72,7 @@ function OrderRow({ order, onOrderUpdated }: { order: Order, onOrderUpdated: () 
         </TableRow>
         {isOpen && (
           <tr className="bg-muted/50">
-            <TableCell colSpan={6} className="p-0">
+            <TableCell colSpan={5} className="p-0">
                <div className="p-6">
                  <div className="space-y-3">
                     <div>
@@ -82,14 +81,6 @@ function OrderRow({ order, onOrderUpdated }: { order: Order, onOrderUpdated: () 
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Order ID</span>
                                 <span className="font-mono text-foreground">{order.id}</span>
-                            </div>
-                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Order Total</span>
-                                <span className="font-bold text-foreground">${order.total.toFixed(2)}</span>
-                            </div>
-                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Buyer ID</span>
-                                <span className="font-mono text-foreground">{order.buyerId}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Order Date</span>
@@ -105,8 +96,6 @@ function OrderRow({ order, onOrderUpdated }: { order: Order, onOrderUpdated: () 
                               <TableHead className="w-[80px]">Image</TableHead>
                               <TableHead>Product</TableHead>
                               <TableHead className="text-center">Quantity</TableHead>
-                              <TableHead className="text-right">Unit Price</TableHead>
-                              <TableHead className="text-right">Subtotal</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -124,8 +113,6 @@ function OrderRow({ order, onOrderUpdated }: { order: Order, onOrderUpdated: () 
                                 </TableCell>
                                 <TableCell>{item.product.name}</TableCell>
                                 <TableCell className="text-center">{item.quantity}</TableCell>
-                                <TableCell className="text-right">${item.product.price.toFixed(2)}</TableCell>
-                                <TableCell className="text-right font-medium">${(item.product.price * item.quantity).toFixed(2)}</TableCell>
                                </TableRow>
                             ))}
                           </TableBody>
@@ -191,7 +178,6 @@ export default function DeliveryOrdersPage() {
                 <TableHead>Order ID</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead className="text-right">Total</TableHead>
                 <TableHead className="text-center">Status</TableHead>
                 <TableHead className="w-[50px] text-center">Details</TableHead>
               </TableRow>
@@ -199,13 +185,13 @@ export default function DeliveryOrdersPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center">
+                  <TableCell colSpan={5} className="text-center">
                     <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
               ) : orders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
                     You have no orders to deliver yet.
                   </TableCell>
                 </TableRow>
