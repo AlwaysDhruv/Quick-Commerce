@@ -20,13 +20,14 @@ export default function SellerProfilePage({ params }: { params: { sellerId: stri
       setIsLoading(true);
       setError(null);
       try {
-        const sellerData = await getSellerProfile(params.sellerId);
+        const sellerId = params.sellerId;
+        const sellerData = await getSellerProfile(sellerId);
         if (!sellerData) {
           throw new Error('Seller not found.');
         }
         setSellerName(sellerData.name);
 
-        const sellerProducts = await getProductsBySeller(params.sellerId);
+        const sellerProducts = await getProductsBySeller(sellerId);
         
         // We need to manually add sellerName to each product since getProductsBySeller doesn't
         const productsWithSellerName = sellerProducts.map(p => ({ ...p, sellerName: sellerData.name }));
@@ -40,7 +41,9 @@ export default function SellerProfilePage({ params }: { params: { sellerId: stri
       }
     };
 
-    fetchSellerData();
+    if (params.sellerId) {
+      fetchSellerData();
+    }
   }, [params.sellerId]);
 
   if (isLoading) {
