@@ -14,13 +14,13 @@ export default function SellerProfilePage({ params }: { params: { sellerId: stri
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { sellerId } = params;
 
   useEffect(() => {
     const fetchSellerData = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const sellerId = params.sellerId;
         const sellerData = await getSellerProfile(sellerId);
         if (!sellerData) {
           throw new Error('Seller not found.');
@@ -41,10 +41,10 @@ export default function SellerProfilePage({ params }: { params: { sellerId: stri
       }
     };
 
-    if (params.sellerId) {
+    if (sellerId) {
       fetchSellerData();
     }
-  }, [params.sellerId]);
+  }, [sellerId]);
 
   if (isLoading) {
     return (
