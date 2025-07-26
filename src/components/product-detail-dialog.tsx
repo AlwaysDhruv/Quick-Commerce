@@ -14,10 +14,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/hooks/use-cart';
 import type { Product } from '@/lib/mock-data';
-import { ShoppingCart, Ban, Store, Package } from 'lucide-react';
+import { ShoppingCart, Ban, Store, Package, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
+import Link from 'next/link';
 
 interface ProductDetailDialogProps {
   product: Product;
@@ -76,11 +77,19 @@ export function ProductDetailDialog({ product, children }: ProductDetailDialogPr
             <DialogDescription className="pt-2 text-base text-muted-foreground">{product.description}</DialogDescription>
             </DialogHeader>
 
-            <div className="flex-1 my-6 space-y-4">
-                 <div className="flex items-center text-sm text-muted-foreground gap-2">
-                    <Store className="h-4 w-4" />
-                    <span>Sold by <strong className="text-foreground">{product.sellerName}</strong></span>
-                </div>
+            <div className="my-6 space-y-4">
+                 <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <Store className="h-4 w-4" />
+                        <span>Sold by <strong className="text-foreground">{product.sellerName}</strong></span>
+                    </div>
+                    <Button variant="link" asChild className="text-accent h-auto p-0">
+                        <Link href={`/seller/${product.sellerId}`}>
+                            View Profile
+                            <ArrowRight className="ml-1 h-4 w-4" />
+                        </Link>
+                    </Button>
+                 </div>
                  <div className="flex items-center text-sm text-muted-foreground gap-2">
                     <Package className="h-4 w-4" />
                     <span>

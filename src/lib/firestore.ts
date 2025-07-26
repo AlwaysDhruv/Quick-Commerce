@@ -39,6 +39,20 @@ export const getUserFromFirestore = async (userId: string): Promise<Pick<User, '
   }
 };
 
+export const getSellerProfile = async (sellerId: string): Promise<{ name: string } | null> => {
+    try {
+        const docRef = doc(db, 'users', sellerId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().role === 'seller') {
+            return { name: docSnap.data().name };
+        }
+        return null;
+    } catch (error) {
+        console.error('Error getting seller profile from Firestore: ', error);
+        throw error;
+    }
+}
+
 export const getUsersCountFromFirestore = async (): Promise<number> => {
   try {
     const querySnapshot = await getDocs(collection(db, 'users'));
