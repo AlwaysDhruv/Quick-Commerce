@@ -9,12 +9,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Frown } from 'lucide-react';
 
-export default function SellerProfilePage({ params }: { params: { sellerId: string } }) {
+export default function SellerProfilePage({ params: { sellerId } }: { params: { sellerId: string } }) {
   const [sellerName, setSellerName] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { sellerId } = params;
 
   useEffect(() => {
     const fetchSellerData = async () => {
