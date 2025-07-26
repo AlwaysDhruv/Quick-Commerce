@@ -79,8 +79,12 @@ export default function FindShopsPage() {
   };
 
   const getRequestStatusForSeller = (sellerId: string) => {
-    const request = requests.find(r => r.sellerId === sellerId);
-    return request ? request.status : null;
+    // Find the most recent request for this seller
+    const sellerRequests = requests
+      .filter(r => r.sellerId === sellerId)
+      .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+    
+    return sellerRequests.length > 0 ? sellerRequests[0].status : null;
   };
 
   if (isLoading) {
@@ -138,7 +142,7 @@ export default function FindShopsPage() {
                       <XCircle className="mr-2" />
                       Request Rejected
                     </Button>
-                  ) : (
+                  ) : ( // This will cover null (no request yet) and 'left'
                     <Button
                       onClick={() => handleSendRequest(seller)}
                       disabled={isSubmitting === seller.uid}

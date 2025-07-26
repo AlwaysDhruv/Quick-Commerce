@@ -268,7 +268,7 @@ export const updateOrderStatus = async (orderId: string, status: Order['status']
 
 // --- DELIVERY REQUEST ---
 
-export type DeliveryRequestStatus = 'pending' | 'approved' | 'rejected';
+export type DeliveryRequestStatus = 'pending' | 'approved' | 'rejected' | 'left';
 
 export type DeliveryRequest = {
   id: string;
@@ -425,9 +425,9 @@ export const approveLeaveRequest = async (request: LeaveRequest) => {
     try {
         const batch = writeBatch(db);
         
-        // Update the request status
-        const requestRef = doc(db, 'leaveRequests', request.id);
-        batch.update(requestRef, { status: 'approved' });
+        // Update the leave request status to 'approved'
+        const leaveRequestRef = doc(db, 'leaveRequests', request.id);
+        batch.update(leaveRequestRef, { status: 'approved' });
 
         // Update the delivery person's user document to remove association
         const deliveryPersonRef = doc(db, 'users', request.deliveryPersonId);
@@ -435,6 +435,20 @@ export const approveLeaveRequest = async (request: LeaveRequest) => {
             associatedSellerId: null,
             associatedSellerName: null
         });
+
+        // Find the corresponding 'approved' deliveryRequest and update its status to 'left'
+        const deliveryRequestQuery = query(
+            collection(db, 'deliveryRequests'),
+            where('deliveryPersonId', '==', request.deliveryPersonId),
+            where('sellerId', '==', request.sellerId),
+            where('status', '==', 'approved')
+        );
+
+        const deliveryRequestSnapshot = await getDocs(deliveryRequestQuery);
+        if (!deliveryRequestSnapshot.empty) {
+            const deliveryRequestDoc = deliveryRequestSnapshot.docs[0];
+            batch.update(deliveryRequestDoc.ref, { status: 'left' });
+        }
 
         await batch.commit();
     } catch (error) {
