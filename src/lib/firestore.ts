@@ -1,4 +1,5 @@
 
+
 import { doc, getDoc, setDoc, addDoc, collection, getDocs, query, where, Timestamp, updateDoc, deleteDoc, writeBatch, runTransaction } from 'firebase/firestore';
 import { db } from './firebase';
 import type { User } from '@/hooks/use-auth';
@@ -357,6 +358,87 @@ export const getDeliveryTeamForSeller = async (sellerId: string): Promise<User[]
         return querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
     } catch (error) {
         console.error('Error getting delivery team for seller: ', error);
+        throw error;
+    }
+}
+
+
+// --- LEAVE REQUESTS ---
+
+export type LeaveRequestStatus = 'pending' | 'approved';
+
+export type LeaveRequest = {
+  id: string;
+  sellerId: string;
+  sellerName: string;
+  deliveryPersonId: string;
+  deliveryPersonName: string;
+  status: LeaveRequestStatus;
+  createdAt: Timestamp;
+};
+
+export const createLeaveRequest = async (data: Omit<LeaveRequest, 'id' | 'createdAt' | 'status'>) => {
+    try {
+        const requestData = {
+            ...data,
+            status: 'pending',
+            createdAt: Timestamp.now(),
+        };
+        await addDoc(collection(db, 'leaveRequests'), requestData);
+    } catch (error) {
+        console.error('Error creating leave request: ', error);
+        throw error;
+    }
+}
+
+export const getLeaveRequestsForSeller = async (sellerId: string): Promise<LeaveRequest[]> => {
+    try {
+        const q = query(collection(db, 'leaveRequests'), where('sellerId', '==', sellerId));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LeaveRequest));
+    } catch (error) {
+        console.error('Error getting leave requests for seller: ', error);
+        throw error;
+    }
+}
+
+export const getPendingLeaveRequestForDeliveryPerson = async (deliveryPersonId: string): Promise<LeaveRequest | null> => {
+     try {
+        const q = query(
+            collection(db, 'leaveRequests'), 
+            where('deliveryPersonId', '==', deliveryPersonId),
+            where('status', '==', 'pending')
+        );
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            return { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as LeaveRequest;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error getting pending leave request: ', error);
+        throw error;
+    }
+}
+
+
+export const approveLeaveRequest = async (request: LeaveRequest) => {
+    try {
+        const batch = writeBatch(db);
+        
+        // Update the request status
+        const requestRef = doc(db, 'leaveRequests', request.id);
+        batch.update(requestRef, { status: 'approved' });
+
+        // Update the delivery person's user document to remove association
+        const deliveryPersonRef = doc(db, 'users', request.deliveryPersonId);
+        batch.update(deliveryPersonRef, { 
+            associatedSellerId: null,
+            associatedSellerName: null
+        });
+
+        await batch.commit();
+    } catch (error) {
+        console.error('Error approving leave request: ', error);
         throw error;
     }
 }

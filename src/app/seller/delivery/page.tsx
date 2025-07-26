@@ -11,16 +11,20 @@ import {
   approveDeliveryRequest,
   updateDeliveryRequestStatus,
   getDeliveryTeamForSeller,
+  getLeaveRequestsForSeller,
+  approveLeaveRequest,
   type DeliveryRequest,
+  type LeaveRequest
 } from '@/lib/firestore';
 import { useAuth, type User } from '@/hooks/use-auth';
-import { Loader2, Check, X, Mail, Users } from 'lucide-react';
+import { Loader2, Check, X, Mail, Users, LogOut } from 'lucide-react';
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
 export default function SellerDeliveryPage() {
-  const [requests, setRequests] = useState<DeliveryRequest[]>([]);
+  const [joinRequests, setJoinRequests] = useState<DeliveryRequest[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [team, setTeam] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
@@ -31,11 +35,13 @@ export default function SellerDeliveryPage() {
     if (!user) return;
     setIsLoading(true);
     try {
-      const [allRequests, deliveryTeam] = await Promise.all([
+      const [allJoinRequests, deliveryTeam, allLeaveRequests] = await Promise.all([
         getDeliveryRequestsForSeller(user.uid),
         getDeliveryTeamForSeller(user.uid),
+        getLeaveRequestsForSeller(user.uid),
       ]);
-      setRequests(allRequests.sort((a,b) => b.createdAt.toMillis() - a.createdAt.toMillis()));
+      setJoinRequests(allJoinRequests.sort((a,b) => b.createdAt.toMillis() - a.createdAt.toMillis()));
+      setLeaveRequests(allLeaveRequests.sort((a,b) => b.createdAt.toMillis() - a.createdAt.toMillis()));
       setTeam(deliveryTeam);
     } catch (error) {
       console.error(error);
@@ -53,7 +59,7 @@ export default function SellerDeliveryPage() {
     fetchData();
   }, [user]);
 
-  const handleApprove = async (request: DeliveryRequest) => {
+  const handleApproveJoin = async (request: DeliveryRequest) => {
     setIsProcessing(request.id);
     try {
       await approveDeliveryRequest(request);
@@ -74,7 +80,7 @@ export default function SellerDeliveryPage() {
     }
   };
 
-  const handleReject = async (request: DeliveryRequest) => {
+  const handleRejectJoin = async (request: DeliveryRequest) => {
     setIsProcessing(request.id);
     try {
       await updateDeliveryRequestStatus(request.id, 'rejected');
@@ -93,8 +99,30 @@ export default function SellerDeliveryPage() {
       setIsProcessing(null);
     }
   };
+
+  const handleApproveLeave = async (request: LeaveRequest) => {
+    setIsProcessing(request.id);
+    try {
+      await approveLeaveRequest(request);
+      toast({
+        title: 'Leave Request Approved',
+        description: `${request.deliveryPersonName} has been removed from your team.`,
+      });
+      fetchData(); // Refresh all data
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: 'Error',
+        description: 'Failed to approve leave request. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessing(null);
+    }
+  };
   
-  const pendingRequests = requests.filter(r => r.status === 'pending');
+  const pendingJoinRequests = joinRequests.filter(r => r.status === 'pending');
+  const pendingLeaveRequests = leaveRequests.filter(r => r.status === 'pending');
 
   return (
     <div className="space-y-6">
@@ -103,22 +131,27 @@ export default function SellerDeliveryPage() {
         <p className="text-muted-foreground">Manage your delivery team and incoming requests.</p>
       </div>
 
-       <Tabs defaultValue="requests">
-        <TabsList>
-            <TabsTrigger value="requests">
-                <Mail className="mr-2" />
-                Requests
-                {pendingRequests.length > 0 && <Badge className="ml-2">{pendingRequests.length}</Badge>}
-            </TabsTrigger>
+       <Tabs defaultValue="team">
+        <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="team">
                 <Users className="mr-2" />
                 My Team
             </TabsTrigger>
+            <TabsTrigger value="join-requests">
+                <Mail className="mr-2" />
+                Join Requests
+                {pendingJoinRequests.length > 0 && <Badge className="ml-2">{pendingJoinRequests.length}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="leave-requests">
+                <LogOut className="mr-2" />
+                Leave Requests
+                 {pendingLeaveRequests.length > 0 && <Badge className="ml-2">{pendingLeaveRequests.length}</Badge>}
+            </TabsTrigger>
         </TabsList>
-        <TabsContent value="requests">
+        <TabsContent value="join-requests">
             <Card>
                 <CardHeader>
-                <CardTitle>Incoming Delivery Requests</CardTitle>
+                <CardTitle>Incoming Join Requests</CardTitle>
                 <CardDescription>Review and respond to requests from delivery personnel to join your shop.</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -138,14 +171,14 @@ export default function SellerDeliveryPage() {
                             <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin text-muted-foreground" />
                         </TableCell>
                         </TableRow>
-                    ) : requests.length === 0 ? (
+                    ) : joinRequests.length === 0 ? (
                         <TableRow>
                         <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
-                            You have no incoming requests.
+                            You have no incoming join requests.
                         </TableCell>
                         </TableRow>
                     ) : (
-                        requests.map((req) => (
+                        joinRequests.map((req) => (
                         <TableRow key={req.id}>
                             <TableCell className="font-medium">{req.deliveryPersonName}</TableCell>
                             <TableCell>{format(req.createdAt.toDate(), 'PPP')}</TableCell>
@@ -161,7 +194,7 @@ export default function SellerDeliveryPage() {
                                 <div className="flex gap-2 justify-end">
                                 <Button
                                     size="sm"
-                                    onClick={() => handleApprove(req)}
+                                    onClick={() => handleApproveJoin(req)}
                                     disabled={isProcessing === req.id}
                                     className="bg-green-600 hover:bg-green-700"
                                 >
@@ -171,7 +204,7 @@ export default function SellerDeliveryPage() {
                                 <Button
                                     size="sm"
                                     variant="destructive"
-                                    onClick={() => handleReject(req)}
+                                    onClick={() => handleRejectJoin(req)}
                                     disabled={isProcessing === req.id}
                                 >
                                      {isProcessing === req.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <X />}
@@ -228,9 +261,68 @@ export default function SellerDeliveryPage() {
                 </CardContent>
             </Card>
         </TabsContent>
+         <TabsContent value="leave-requests">
+            <Card>
+                <CardHeader>
+                <CardTitle>Incoming Leave Requests</CardTitle>
+                <CardDescription>Review and respond to requests from your team members to leave.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                <Table>
+                    <TableHeader>
+                    <TableRow>
+                        <TableHead>Applicant</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                    {isLoading ? (
+                        <TableRow>
+                        <TableCell colSpan={4} className="text-center">
+                            <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin text-muted-foreground" />
+                        </TableCell>
+                        </TableRow>
+                    ) : leaveRequests.length === 0 ? (
+                        <TableRow>
+                        <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
+                            You have no incoming leave requests.
+                        </TableCell>
+                        </TableRow>
+                    ) : (
+                        leaveRequests.map((req) => (
+                        <TableRow key={req.id}>
+                            <TableCell className="font-medium">{req.deliveryPersonName}</TableCell>
+                            <TableCell>{format(req.createdAt.toDate(), 'PPP')}</TableCell>
+                            <TableCell>
+                                <Badge variant={ req.status === 'pending' ? 'secondary' : 'default' }>
+                                    {req.status}
+                                </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                            {req.status === 'pending' && (
+                                <Button
+                                    size="sm"
+                                    onClick={() => handleApproveLeave(req)}
+                                    disabled={isProcessing === req.id}
+                                    className="bg-primary hover:bg-primary/90"
+                                >
+                                    {isProcessing === req.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check />}
+                                    Approve Leave
+                                </Button>
+                            )}
+                            </TableCell>
+                        </TableRow>
+                        ))
+                    )}
+                    </TableBody>
+                </Table>
+                </CardContent>
+            </Card>
+        </TabsContent>
         </Tabs>
 
     </div>
   );
 }
-
