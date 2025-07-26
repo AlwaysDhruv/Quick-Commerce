@@ -1,6 +1,10 @@
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { Store, Truck } from 'lucide-react';
 
 export default function DeliveryDashboard() {
   const { user } = useAuth();
@@ -13,10 +17,36 @@ export default function DeliveryDashboard() {
             <p className="text-muted-foreground">This is your delivery dashboard.</p>
         </div>
       </div>
-       <div className="text-center py-20 rounded-lg border-2 border-dashed">
-            <h2 className="text-xl font-semibold">Ready for deliveries!</h2>
-            <p className="text-muted-foreground mt-2">Assigned orders will appear here.</p>
+
+      {user?.associatedSellerId ? (
+        <Card>
+            <CardHeader>
+                <CardTitle>You're part of a team!</CardTitle>
+                <CardDescription>
+                    You are currently assigned to deliver orders for <strong>{user.associatedSellerName}</strong>.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button asChild>
+                    <Link href="/delivery/orders">
+                        <Truck className="mr-2" />
+                        View Assigned Orders
+                    </Link>
+                </Button>
+            </CardContent>
+        </Card>
+      ) : (
+         <div className="text-center py-20 rounded-lg border-2 border-dashed">
+            <h2 className="text-xl font-semibold">You're a free agent!</h2>
+            <p className="text-muted-foreground mt-2">You are not yet associated with any seller's shop.</p>
+            <Button asChild className="mt-4">
+                <Link href="/delivery/shops">
+                    <Store className="mr-2" />
+                    Find Shops to Join
+                </Link>
+            </Button>
         </div>
+      )}
     </div>
   );
 }

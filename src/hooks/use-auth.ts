@@ -8,6 +8,8 @@ export type User = {
   name: string;
   email: string;
   role: 'buyer' | 'seller' | 'delivery';
+  associatedSellerId?: string | null;
+  associatedSellerName?: string | null;
 };
 
 export type AuthContextType = {

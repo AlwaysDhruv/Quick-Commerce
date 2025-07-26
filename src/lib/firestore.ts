@@ -5,30 +5,33 @@ import type { User } from '@/hooks/use-auth';
 import type { Product } from './mock-data';
 import { CartItem } from '@/hooks/use-cart';
 
+// --- USER ---
+
 export const addUserToFirestore = async (userId: string, name: string, email: string, role: 'buyer' | 'seller' | 'delivery') => {
   try {
-    await setDoc(doc(db, 'users', userId), {
+    const userData: any = {
       name,
       email,
       role,
-    });
+    };
+    if (role === 'delivery') {
+      userData.associatedSellerId = null;
+      userData.associatedSellerName = null;
+    }
+    await setDoc(doc(db, 'users', userId), userData);
   } catch (error) {
     console.error('Error adding user to Firestore: ', error);
     throw error;
   }
 };
 
-export const getUserFromFirestore = async (userId: string): Promise<Pick<User, 'name' | 'role'> | null> => {
+export const getUserFromFirestore = async (userId: string): Promise<User | null> => {
   try {
     const docRef = doc(db, 'users', userId);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      const data = docSnap.data();
-      return {
-        name: data.name,
-        role: data.role,
-      } as Pick<User, 'name' | 'role'>;
+      return docSnap.data() as User;
     } else {
       console.log('No such user document!');
       return null;
@@ -74,7 +77,21 @@ export const getBuyerCountFromFirestore = async (): Promise<number> => {
   }
 }
 
-// Product Functions
+
+export const getAllSellers = async (): Promise<User[]> => {
+    try {
+        const q = query(collection(db, 'users'), where('role', '==', 'seller'));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
+    } catch (error) {
+        console.error('Error getting sellers from Firestore: ', error);
+        throw error;
+    }
+}
+
+
+// --- PRODUCT ---
+
 export const addProductToFirestore = async (productData: Omit<Product, 'id' | 'sellerName'>) => {
   try {
     const docRef = await addDoc(collection(db, 'products'), productData);
@@ -160,7 +177,9 @@ export const getProductsBySeller = async (sellerId: string): Promise<Product[]> 
   }
 }
 
-// Order type definition
+
+// --- ORDER ---
+
 export type Order = {
   id: string;
   buyerId: string;
@@ -169,18 +188,16 @@ export type Order = {
   total: number;
   status: 'Processing' | 'Shipped' | 'Delivered';
   createdAt: Timestamp;
-  sellerId: string; // Assuming one seller per order for simplicity
+  sellerId: string;
+  deliveryPersonId?: string | null;
+  deliveryPersonName?: string | null;
 };
 
-
-// Order Functions
 export const addOrderToFirestore = async (orderData: Omit<Order, 'id'>) => {
   try {
     await runTransaction(db, async (transaction) => {
-      // 1. Create the new order document reference ahead of time
       const orderRef = doc(collection(db, 'orders'));
 
-      // 2. READ phase: Read all product documents first
       const productUpdates = [];
       for (const item of orderData.items) {
         const productRef = doc(db, 'products', item.product.id);
@@ -200,12 +217,10 @@ export const addOrderToFirestore = async (orderData: Omit<Order, 'id'>) => {
         productUpdates.push({ ref: productRef, newStock });
       }
 
-      // 3. WRITE phase: Perform all updates and the set
       for (const update of productUpdates) {
         transaction.update(update.ref, { stock: update.newStock });
       }
 
-      // Finally, create the order document
       transaction.set(orderRef, {
         ...orderData,
         createdAt: Timestamp.now(),
@@ -214,7 +229,7 @@ export const addOrderToFirestore = async (orderData: Omit<Order, 'id'>) => {
     
   } catch (error) {
     console.error('Error adding order to Firestore: ', error);
-    throw error; // Re-throw the error to be caught by the calling function
+    throw error;
   }
 };
 
@@ -238,3 +253,100 @@ export const deleteOrderFromFirestore = async (orderId: string) => {
     throw error;
   }
 };
+
+
+// --- DELIVERY REQUEST ---
+
+export type DeliveryRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export type DeliveryRequest = {
+  id: string;
+  sellerId: string;
+  sellerName: string;
+  deliveryPersonId: string;
+  deliveryPersonName: string;
+  status: DeliveryRequestStatus;
+  createdAt: Timestamp;
+};
+
+export const createDeliveryRequest = async (data: Omit<DeliveryRequest, 'id' | 'createdAt' | 'status'>) => {
+    try {
+        const requestData = {
+            ...data,
+            status: 'pending',
+            createdAt: Timestamp.now(),
+        };
+        await addDoc(collection(db, 'deliveryRequests'), requestData);
+    } catch (error) {
+        console.error('Error creating delivery request: ', error);
+        throw error;
+    }
+}
+
+export const getDeliveryRequestsForSeller = async (sellerId: string): Promise<DeliveryRequest[]> => {
+    try {
+        const q = query(collection(db, 'deliveryRequests'), where('sellerId', '==', sellerId));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DeliveryRequest));
+    } catch (error) {
+        console.error('Error getting delivery requests for seller: ', error);
+        throw error;
+    }
+}
+
+export const getDeliveryRequestsForDeliveryPerson = async (deliveryPersonId: string): Promise<DeliveryRequest[]> => {
+    try {
+        const q = query(collection(db, 'deliveryRequests'), where('deliveryPersonId', '==', deliveryPersonId));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DeliveryRequest));
+    } catch (error) {
+        console.error('Error getting delivery requests for delivery person: ', error);
+        throw error;
+    }
+}
+
+export const updateDeliveryRequestStatus = async (requestId: string, status: DeliveryRequestStatus) => {
+    try {
+        const requestRef = doc(db, 'deliveryRequests', requestId);
+        await updateDoc(requestRef, { status });
+    } catch (error) {
+        console.error('Error updating delivery request status: ', error);
+        throw error;
+    }
+}
+
+export const approveDeliveryRequest = async (request: DeliveryRequest) => {
+    try {
+        const batch = writeBatch(db);
+        
+        // Update the request status
+        const requestRef = doc(db, 'deliveryRequests', request.id);
+        batch.update(requestRef, { status: 'approved' });
+
+        // Update the delivery person's user document
+        const deliveryPersonRef = doc(db, 'users', request.deliveryPersonId);
+        batch.update(deliveryPersonRef, { 
+            associatedSellerId: request.sellerId,
+            associatedSellerName: request.sellerName
+        });
+
+        await batch.commit();
+    } catch (error) {
+        console.error('Error approving delivery request: ', error);
+        throw error;
+    }
+}
+
+export const getDeliveryTeamForSeller = async (sellerId: string): Promise<User[]> => {
+    try {
+        const q = query(collection(db, 'users'), 
+            where('role', '==', 'delivery'), 
+            where('associatedSellerId', '==', sellerId)
+        );
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
+    } catch (error) {
+        console.error('Error getting delivery team for seller: ', error);
+        throw error;
+    }
+}
