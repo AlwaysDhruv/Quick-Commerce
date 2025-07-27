@@ -229,8 +229,11 @@ function CartRecommendations({ allProducts }: { allProducts: Product[] }) {
       const foundProducts = recommendedNames
         .map(findProductByName)
         .filter((p): p is Product => p !== undefined);
+      
+      // Filter out duplicate products to prevent key errors
+      const uniqueProducts = Array.from(new Map(foundProducts.map(p => [p.id, p])).values());
 
-      setRecommendedProducts(foundProducts.slice(0, 3));
+      setRecommendedProducts(uniqueProducts.slice(0, 3));
 
     } catch (error) {
       console.error(error);
