@@ -1,5 +1,6 @@
 
 
+
 import { doc, getDoc, setDoc, addDoc, collection, getDocs, query, where, Timestamp, updateDoc, deleteDoc, writeBatch, runTransaction } from 'firebase/firestore';
 import { db } from './firebase';
 import type { User } from '@/hooks/use-auth';
@@ -10,7 +11,7 @@ import { CartItem } from '@/hooks/use-cart';
 
 export const addUserToFirestore = async (userId: string, name: string, email: string, role: 'buyer' | 'seller' | 'delivery') => {
   try {
-    const userData: any = {
+    const userData: Partial<User> = {
       name,
       email,
       role,
@@ -18,6 +19,9 @@ export const addUserToFirestore = async (userId: string, name: string, email: st
     if (role === 'delivery') {
       userData.associatedSellerId = null;
       userData.associatedSellerName = null;
+    }
+    if (role === 'buyer') {
+      userData.address = null;
     }
     await setDoc(doc(db, 'users', userId), userData);
   } catch (error) {
@@ -41,6 +45,16 @@ export const getUserFromFirestore = async (userId: string): Promise<User | null>
     console.error('Error getting user from Firestore: ', error);
     throw error;
   }
+};
+
+export const updateUserAddress = async (userId: string, address: Address) => {
+    try {
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, { address });
+    } catch (error) {
+        console.error('Error updating user address in Firestore: ', error);
+        throw error;
+    }
 };
 
 export const getSellerProfile = async (sellerId: string): Promise<{ name: string } | null> => {

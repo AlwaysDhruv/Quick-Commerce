@@ -3,12 +3,14 @@
 
 import { createContext, useContext } from 'react';
 import type { UserCredential } from 'firebase/auth';
+import type { Address } from '@/lib/firestore';
 
 export type User = {
   uid: string;
   name: string;
   email: string;
   role: 'buyer' | 'seller' | 'delivery';
+  address?: Address | null;
   associatedSellerId?: string | null;
   associatedSellerName?: string | null;
 };

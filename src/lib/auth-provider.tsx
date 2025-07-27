@@ -18,18 +18,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (firebaseUser) {
         const firestoreUser = await getUserFromFirestore(firebaseUser.uid);
         if (firestoreUser) {
-          const userData = {
+          const userData: User = {
             uid: firebaseUser.uid,
             email: firebaseUser.email!,
             name: firestoreUser.name,
             role: firestoreUser.role,
+            address: firestoreUser.address,
             associatedSellerId: firestoreUser.associatedSellerId,
             associatedSellerName: firestoreUser.associatedSellerName,
           };
           setUser(userData);
            // Redirect on initial load if user is already logged in
           if (['/login', '/register', '/'].includes(window.location.pathname)) {
-            let redirectPath = '/buyer';
+            let redirectPath = '/buyer/profile'; // Default redirect for buyer
             if (firestoreUser.role === 'seller') {
               redirectPath = '/seller';
             } else if (firestoreUser.role === 'delivery') {
@@ -55,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, pass);
     const firestoreUser = await getUserFromFirestore(userCredential.user.uid);
     if (firestoreUser) {
-        let redirectPath = '/buyer';
+        let redirectPath = '/buyer/profile';
         if (firestoreUser.role === 'seller') {
             redirectPath = '/seller';
         } else if (firestoreUser.role === 'delivery') {
@@ -76,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await addUserToFirestore(userCredential.user.uid, name, email, role);
     const firestoreUser = await getUserFromFirestore(userCredential.user.uid);
      if (firestoreUser) {
-        let redirectPath = '/buyer';
+        let redirectPath = '/buyer/profile';
         if (firestoreUser.role === 'seller') {
             redirectPath = '/seller';
         } else if (firestoreUser.role === 'delivery') {

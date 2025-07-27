@@ -37,7 +37,7 @@ export function UserNav() {
     if (!user) return "/";
     switch (user.role) {
       case 'buyer':
-        return "/buyer";
+        return "/buyer/profile";
       case 'seller':
         return "/seller";
       case 'delivery':

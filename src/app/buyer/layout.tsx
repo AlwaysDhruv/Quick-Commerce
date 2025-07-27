@@ -4,11 +4,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, ListOrdered, ShoppingBag } from 'lucide-react';
+import { Home, ListOrdered, ShoppingBag, User } from 'lucide-react';
 import { Logo } from '@/components/logo';
 
 const navItems = [
   { href: '/buyer', label: 'Shop', icon: ShoppingBag },
+  { href: '/buyer/profile', label: 'My Profile', icon: User },
   { href: '/buyer/orders', label: 'My Orders', icon: ListOrdered },
 ];
 
@@ -40,7 +41,7 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
       </aside>
-      <div className="bg-card/50 p-6 rounded-lg border">{children}</div>
+      <div className="rounded-lg border bg-card/50 p-6">{children}</div>
     </div>
   );
 }

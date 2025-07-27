@@ -13,19 +13,20 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { addOrderToFirestore, getProductsFromFirestore, type Address } from '@/lib/firestore';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
+import { geocodeAddress } from '@/ai/flows/geocode-address-flow';
 
 function ShippingAddressForm({ onConfirm, onCancel, user }: { onConfirm: (address: Address) => void, onCancel: () => void, user: any }) {
   const [fullName, setFullName] = useState(user?.name || '');
-  const [phone, setPhone] = useState('');
-  const [streetAddress, setStreetAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [district, setDistrict] = useState('');
-  const [country, setCountry] = useState('');
-  const [pincode, setPincode] = useState('');
-  const [latitude, setLatitude] = useState<number | undefined>();
-  const [longitude, setLongitude] = useState<number | undefined>();
+  const [phone, setPhone] = useState(user?.address?.phone || '');
+  const [streetAddress, setStreetAddress] = useState(user?.address?.streetAddress || '');
+  const [city, setCity] = useState(user?.address?.city || '');
+  const [district, setDistrict] = useState(user?.address?.district || '');
+  const [country, setCountry] = useState(user?.address?.country || '');
+  const [pincode, setPincode] = useState(user?.address?.pincode || '');
+  const [latitude, setLatitude] = useState<number | undefined>(user?.address?.latitude);
+  const [longitude, setLongitude] = useState<number | undefined>(user?.address?.longitude);
   const [isLocating, setIsLocating] = useState(false);
   const { toast } = useToast();
 
@@ -33,11 +34,27 @@ function ShippingAddressForm({ onConfirm, onCancel, user }: { onConfirm: (addres
     if (navigator.geolocation) {
       setIsLocating(true);
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLatitude(position.coords.latitude);
-          setLongitude(position.coords.longitude);
-          toast({ title: "Location captured!" });
-          setIsLocating(false);
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          setLatitude(lat);
+          setLongitude(lon);
+          toast({ title: "Location captured! Fetching address..." });
+
+          try {
+            const geocoded = await geocodeAddress({ latitude: lat, longitude: lon });
+            setStreetAddress(geocoded.streetAddress);
+            setCity(geocoded.city);
+            setDistrict(geocoded.district);
+            setCountry(geocoded.country);
+            setPincode(geocoded.pincode);
+            toast({ title: "Address automatically filled!" });
+          } catch(err) {
+            console.error(err);
+            toast({ title: "Could not auto-fill address", description: "Please fill the details manually.", variant: "destructive" });
+          } finally {
+            setIsLocating(false);
+          }
         },
         (error) => {
           console.error("Geolocation error:", error);
