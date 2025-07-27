@@ -4,18 +4,13 @@
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Loader2, MapPin, ListOrdered, User, Edit } from 'lucide-react';
+import { Loader2, MapPin, User, Edit } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { updateUserAddress, getOrdersByBuyer, type Address, type Order } from '@/lib/firestore';
+import { updateUserAddress, type Address } from '@/lib/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { format } from 'date-fns';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 import { geocodeAddress } from '@/ai/flows/geocode-address-flow';
 
 function AddressDialog({ user, onAddressUpdated }: { user: any, onAddressUpdated: () => void }) {
@@ -183,94 +178,12 @@ function AddressDialog({ user, onAddressUpdated }: { user: any, onAddressUpdated
     )
 }
 
-function RecentOrders({ orders, isLoading }: { orders: Order[], isLoading: boolean}) {
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <ListOrdered />
-                    Recent Orders
-                </CardTitle>
-                <CardDescription>Here are your last 5 orders. <Link href="/buyer/orders" className="text-accent underline">View All</Link></CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <Table>
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead>Order ID</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                        <TableHead className="text-center">Status</TableHead>
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {isLoading ? (
-                        <TableRow>
-                        <TableCell colSpan={4} className="text-center">
-                            <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin text-muted-foreground" />
-                        </TableCell>
-                        </TableRow>
-                    ) : orders.length === 0 ? (
-                        <TableRow>
-                        <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
-                            You have not placed any orders yet.
-                        </TableCell>
-                        </TableRow>
-                    ) : (
-                        orders.slice(0, 5).map((order) => (
-                         <TableRow key={order.id}>
-                            <TableCell className="font-medium">...{order.id.slice(-6)}</TableCell>
-                            <TableCell>{format(order.createdAt.toDate(), 'PPP')}</TableCell>
-                            <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
-                            <TableCell className="text-center">
-                                <Badge
-                                className={cn(
-                                    order.status === 'Shipped' && 'bg-blue-500/20 text-blue-500',
-                                    order.status === 'Out for Delivery' && 'bg-orange-500/20 text-orange-500',
-                                    order.status === 'Processing' && 'bg-yellow-500/20 text-yellow-500',
-                                    order.status === 'Delivered' && 'bg-green-500/20 text-green-500'
-                                )}
-                                variant="outline"
-                                >
-                                {order.status}
-                                </Badge>
-                            </TableCell>
-                        </TableRow>
-                        ))
-                    )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-    )
-}
-
 export default function BuyerProfilePage() {
   const { user, loading: authLoading } = useAuth();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
+  
   // This is a bit of a hack to force a re-render when the user object is updated
   // after saving the address. A more robust solution might use a global state manager.
   const [userVersion, setUserVersion] = useState(0);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (user) {
-        setIsLoading(true);
-        const fetchedOrders = await getOrdersByBuyer(user.uid);
-        fetchedOrders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-        setOrders(fetchedOrders);
-        setIsLoading(false);
-      }
-    };
-
-    if (!authLoading && user) {
-        fetchData();
-    } else if (!authLoading) {
-        setIsLoading(false);
-    }
-  }, [user, authLoading, userVersion]);
 
   const handleAddressUpdate = () => {
     // This will trigger a re-fetch of data by bumping the dependency
@@ -315,8 +228,6 @@ export default function BuyerProfilePage() {
                 {user && <AddressDialog user={user} onAddressUpdated={handleAddressUpdate} />}
             </CardFooter>
         </Card>
-
-       <RecentOrders orders={orders} isLoading={isLoading} />
     </div>
   );
 }

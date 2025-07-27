@@ -1,18 +1,19 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getOrdersByBuyer, type Order } from '@/lib/firestore';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2, ChevronDown } from 'lucide-react';
+import { Loader2, ChevronDown, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import React from 'react';
+import { Input } from '@/components/ui/input';
 
 function OrderRow({ order }: { order: Order }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -96,6 +97,7 @@ function OrderRow({ order }: { order: Order }) {
 export default function BuyerOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -114,6 +116,20 @@ export default function BuyerOrdersPage() {
     }
   }, [user]);
 
+  const filteredOrders = useMemo(() => {
+    if (!searchQuery) return orders;
+
+    const lowercasedQuery = searchQuery.toLowerCase();
+
+    return orders.filter(order => {
+      const idMatch = order.id.slice(-6).toLowerCase().includes(lowercasedQuery);
+      const productMatch = order.items.some(item =>
+        item.product.name.toLowerCase().includes(lowercasedQuery)
+      );
+      return idMatch || productMatch;
+    });
+  }, [orders, searchQuery]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -124,8 +140,21 @@ export default function BuyerOrdersPage() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Order History</CardTitle>
-          <CardDescription>A list of all your past orders.</CardDescription>
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle>Order History</CardTitle>
+                  <CardDescription>A list of all your past orders.</CardDescription>
+                </div>
+                <div className="relative w-full max-w-xs">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search by Order ID or Product..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10"
+                    />
+                </div>
+            </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -145,14 +174,14 @@ export default function BuyerOrdersPage() {
                     <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
-              ) : orders.length === 0 ? (
+              ) : filteredOrders.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
-                    You have not placed any orders yet.
+                    {searchQuery ? 'No orders found for your search.' : 'You have not placed any orders yet.'}
                   </TableCell>
                 </TableRow>
               ) : (
-                orders.map((order) => (
+                filteredOrders.map((order) => (
                   <OrderRow key={order.id} order={order} />
                 ))
               )}
