@@ -33,6 +33,7 @@ function StatCard({ title, value, icon: Icon, isLoading }: { title: string, valu
 }
 
 export default function BuyerSellerProfilePage({ params }: { params: { sellerId: string } }) {
+  const { sellerId } = params;
   const [sellerName, setSellerName] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState({ productCount: 0, categoryCount: 0, buyerCount: 0 });
@@ -40,7 +41,6 @@ export default function BuyerSellerProfilePage({ params }: { params: { sellerId:
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const sellerId = params.sellerId;
     if (sellerId) {
       const fetchSellerData = async () => {
         setIsLoading(true);
@@ -75,7 +75,7 @@ export default function BuyerSellerProfilePage({ params }: { params: { sellerId:
       };
       fetchSellerData();
     }
-  }, [params.sellerId]);
+  }, [sellerId]);
 
   if (error) {
     return (
