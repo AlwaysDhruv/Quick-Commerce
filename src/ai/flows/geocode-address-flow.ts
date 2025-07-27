@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -10,7 +11,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { defineTool } from 'genkit/tool';
 import { config } from 'dotenv';
 config();
 
@@ -31,7 +31,7 @@ export type GeocodeAddressOutput = z.infer<typeof GeocodeAddressOutputSchema>;
 
 // This tool uses the Google Maps Geocoding API. 
 // IMPORTANT: You must enable the "Geocoding API" in your Google Cloud project for this to work.
-const geocodeAddressTool = defineTool(
+const geocodeAddressTool = ai.defineTool(
   {
     name: 'geocodeAddressTool',
     description: 'Converts latitude and longitude into a structured address using Google Geocoding API.',
