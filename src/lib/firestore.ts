@@ -319,24 +319,34 @@ export const deleteOrderFromFirestore = async (orderId: string) => {
 export const updateOrderStatus = async (
   orderId: string, 
   status: Order['status'],
-  deliveryPerson: { id: string; name: string } | null
+  deliveryPerson?: { id: string; name: string }
 ) => {
   try {
-    const orderRef = doc(db, 'orders', orderId);
-    const updateData: Partial<Order> = { status };
+    await runTransaction(db, async (transaction) => {
+      const orderRef = doc(db, 'orders', orderId);
+      const orderDoc = await transaction.get(orderRef);
+      if (!orderDoc.exists()) {
+        throw new Error("Order not found!");
+      }
 
-    if (status === 'Delivered') {
-      updateData.deliveredAt = Timestamp.now();
-    }
-    
-    // If a delivery person is provided, assign them to the order.
-    // This is typically done when status is 'Shipped' or 'Out for Delivery'.
-    if (deliveryPerson) {
+      const updateData: any = { status };
+
+      // Handle status-specific logic
+      if (status === 'Delivered') {
+        updateData.deliveredAt = Timestamp.now();
+      }
+
+      // If a delivery person is provided (on 'Shipped'), assign them.
+      if (status === 'Shipped') {
+        if (!deliveryPerson) {
+          throw new Error("A delivery person must be assigned to ship an order.");
+        }
         updateData.deliveryPersonId = deliveryPerson.id;
         updateData.deliveryPersonName = deliveryPerson.name;
-    }
-
-    await updateDoc(orderRef, updateData as any);
+      }
+      
+      transaction.update(orderRef, updateData);
+    });
   } catch (error) {
     console.error('Error updating order status: ', error);
     throw error;

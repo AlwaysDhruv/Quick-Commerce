@@ -11,7 +11,7 @@ import { getOrdersBySeller, updateOrderStatus, deleteOrderFromFirestore, type Or
 import { useAuth, type User } from '@/hooks/use-auth';
 import { Loader2, MoreHorizontal, Trash2, ChevronDown, CheckCircle, Truck, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -83,7 +83,7 @@ function OrderRow({ order, onOrderUpdated, deliveryTeam }: { order: Order; onOrd
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleStatusUpdate = async (status: Order['status'], deliveryPerson: { id: string, name: string } | null) => {
+  const handleStatusUpdate = async (status: Order['status'], deliveryPerson?: { id: string, name: string }) => {
     if (status === 'Shipped' && !deliveryPerson) {
          toast({
             title: 'Assignment Required',
@@ -98,7 +98,7 @@ function OrderRow({ order, onOrderUpdated, deliveryTeam }: { order: Order; onOrd
       await updateOrderStatus(order.id, status, deliveryPerson);
       toast({
         title: 'Order Status Updated',
-        description: `Order ...${order.id.slice(-6)} is now ${status}. ${deliveryPerson ? `Assigned to ${deliveryPerson.name}` : ''}`
+        description: `Order ...${order.id.slice(-6)} is now ${status}.`
       });
       onOrderUpdated();
     } catch(error) {
@@ -145,38 +145,46 @@ function OrderRow({ order, onOrderUpdated, deliveryTeam }: { order: Order; onOrd
           <TableCell onClick={(e) => e.stopPropagation()}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button aria-haspopup="true" size="icon" variant="ghost">
-                  <MoreHorizontal className="h-4 w-4" />
+                <Button aria-haspopup="true" size="icon" variant="ghost" disabled={isUpdating}>
+                  {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                 <DropdownMenuSub>
-                    <DropdownMenuSubTrigger disabled={isUpdating}>
+                <DropdownMenuSeparator />
+                 {order.status === 'Processing' && (
+                     <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>
+                            <Truck className="mr-2" />
+                            Assign & Ship
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuPortal>
+                            <DropdownMenuSubContent>
+                                <DropdownMenuLabel>Select Delivery Person</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {deliveryTeam.length > 0 ? deliveryTeam.map(person => (
+                                    <DropdownMenuItem key={person.uid} onClick={() => handleStatusUpdate('Shipped', { id: person.uid, name: person.name })}>
+                                        {person.name}
+                                    </DropdownMenuItem>
+                                )) : <DropdownMenuItem disabled>No delivery staff found</DropdownMenuItem>}
+                            </DropdownMenuSubContent>
+                        </DropdownMenuPortal>
+                     </DropdownMenuSub>
+                 )}
+                 {order.status === 'Shipped' && (
+                    <DropdownMenuItem onClick={() => handleStatusUpdate('Out for Delivery')}>
                         <Truck className="mr-2" />
-                        Update Status
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                        <DropdownMenuSubContent>
-                             <DropdownMenuSub>
-                               <DropdownMenuSubTrigger>Assign & Ship</DropdownMenuSubTrigger>
-                               <DropdownMenuPortal>
-                                 <DropdownMenuSubContent>
-                                    {deliveryTeam.length > 0 ? deliveryTeam.map(person => (
-                                        <DropdownMenuItem key={person.uid} onClick={() => handleStatusUpdate('Shipped', { id: person.uid, name: person.name })}>
-                                            {person.name}
-                                        </DropdownMenuItem>
-                                    )) : <DropdownMenuItem disabled>No delivery staff found</DropdownMenuItem>}
-                                 </DropdownMenuSubContent>
-                               </DropdownMenuPortal>
-                             </DropdownMenuSub>
-                             <DropdownMenuItem onClick={() => handleStatusUpdate('Delivered', order.deliveryPersonId ? {id: order.deliveryPersonId, name: order.deliveryPersonName!} : null)} disabled={isUpdating}>
-                                Mark as Delivered
-                            </DropdownMenuItem>
-                        </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                </DropdownMenuSub>
+                        Mark as Out for Delivery
+                    </DropdownMenuItem>
+                 )}
+                 {order.status === 'Out for Delivery' && (
+                    <DropdownMenuItem onClick={() => handleStatusUpdate('Delivered')}>
+                        <CheckCircle className="mr-2" />
+                        Mark as Delivered
+                    </DropdownMenuItem>
+                 )}
+                <DropdownMenuSeparator />
                 <DeleteOrderDialog order={order} onOrderDeleted={onOrderUpdated}>
                     <DropdownMenuItem
                       className="text-destructive"
