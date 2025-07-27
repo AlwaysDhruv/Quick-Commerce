@@ -7,12 +7,13 @@ import { CartItem } from '@/hooks/use-cart';
 
 // --- USER ---
 
-export const addUserToFirestore = async (userId: string, name: string, email: string, role: 'buyer' | 'seller' | 'delivery') => {
+export const addUserToFirestore = async (userId: string, name: string, email: string, role: 'buyer' | 'seller' | 'delivery', phone?: string) => {
   try {
     const userData: Partial<User> = {
       name,
       email,
       role,
+      phone: phone || null,
     };
     if (role === 'delivery') {
       userData.associatedSellerId = null;
@@ -34,7 +35,7 @@ export const getUserFromFirestore = async (userId: string): Promise<User | null>
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      return docSnap.data() as User;
+      return { uid: docSnap.id, ...docSnap.data() } as User;
     } else {
       console.log('No such user document!');
       return null;

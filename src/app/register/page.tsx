@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
@@ -21,6 +21,7 @@ const formSchema = z.object({
   email: z.string().email({ message: 'Invalid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
   role: z.enum(['buyer', 'seller', 'delivery'], { required_error: 'You must select a role.' }),
+  phone: z.string().optional(),
 });
 
 export default function RegisterPage() {
@@ -35,12 +36,18 @@ export default function RegisterPage() {
       email: '',
       password: '',
       role: 'buyer',
+      phone: '',
     },
+  });
+  
+  const role = useWatch({
+    control: form.control,
+    name: "role",
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const userCredential = await register(values.email, values.password, values.name, values.role);
+      const userCredential = await register(values.email, values.password, values.name, values.role, values.phone);
        if (userCredential) {
         toast({
           title: 'Registration Successful',
@@ -90,46 +97,7 @@ export default function RegisterPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="John Doe" {...field} disabled={form.formState.isSubmitting}/>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="name@example.com" {...field} disabled={form.formState.isSubmitting}/>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} disabled={form.formState.isSubmitting}/>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
+                <FormField
                 control={form.control}
                 name="role"
                 render={({ field }) => (
@@ -161,6 +129,60 @@ export default function RegisterPage() {
                           <FormLabel className="font-normal">Delivery</FormLabel>
                         </FormItem>
                       </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John Doe" {...field} disabled={form.formState.isSubmitting}/>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="name@example.com" {...field} disabled={form.formState.isSubmitting}/>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+                {(role === 'buyer' || role === 'delivery') && (
+                     <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                            <Input placeholder="+1 123 456 7890" {...field} disabled={form.formState.isSubmitting}/>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                )}
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="••••••••" {...field} disabled={form.formState.isSubmitting}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
