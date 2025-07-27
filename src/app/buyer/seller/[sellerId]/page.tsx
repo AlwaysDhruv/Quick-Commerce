@@ -6,7 +6,9 @@ import {
     getProductsBySeller, 
     getSellerProfile,
     getCategoryCountForSeller,
-    getUniqueBuyerCountForSeller
+    getUniqueBuyerCountForSeller,
+    getCategoriesBySeller,
+    type Category,
 } from '@/lib/firestore';
 import type { Product } from '@/lib/mock-data';
 import { ProductCard } from '@/components/product-card';
@@ -14,6 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Frown, Store, Package, FolderKanban, Users, MessageSquare } from 'lucide-react';
 import React from 'react';
+import { Badge } from '@/components/ui/badge';
 
 function StatCard({ title, value, icon: Icon, isLoading }: { title: string, value: string | number, icon: React.ElementType, isLoading: boolean }) {
     return (
@@ -36,6 +39,7 @@ function StatCard({ title, value, icon: Icon, isLoading }: { title: string, valu
 export default function BuyerSellerProfilePage({ params: { sellerId } }: { params: { sellerId: string } }) {
   const [sellerName, setSellerName] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [stats, setStats] = useState({ productCount: 0, categoryCount: 0, buyerCount: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,17 +56,18 @@ export default function BuyerSellerProfilePage({ params: { sellerId } }: { param
           }
           setSellerName(sellerData.name);
 
-          const [sellerProducts, categoryCount, buyerCount] = await Promise.all([
+          const [sellerProducts, sellerCategories, buyerCount] = await Promise.all([
             getProductsBySeller(sellerId),
-            getCategoryCountForSeller(sellerId),
+            getCategoriesBySeller(sellerId),
             getUniqueBuyerCountForSeller(sellerId)
           ]);
           
           const productsWithSellerName = sellerProducts.map(p => ({ ...p, sellerName: sellerData.name }));
           setProducts(productsWithSellerName);
+          setCategories(sellerCategories.sort((a,b) => a.name.localeCompare(b.name)));
           setStats({
               productCount: sellerProducts.length,
-              categoryCount,
+              categoryCount: sellerCategories.length,
               buyerCount
           });
 
@@ -101,6 +106,25 @@ export default function BuyerSellerProfilePage({ params: { sellerId } }: { param
             <StatCard title="Product Categories" value={stats.categoryCount} icon={FolderKanban} isLoading={isLoading} />
             <StatCard title="Happy Customers" value={stats.buyerCount} icon={Users} isLoading={isLoading} />
         </div>
+
+      <div>
+        <h2 className="font-headline text-3xl font-bold mb-6">Categories</h2>
+         {isLoading ? (
+            <div className="flex flex-wrap gap-2">
+                {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-24 rounded-full" />)}
+            </div>
+        ) : categories.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+                {categories.map(category => (
+                    <Badge key={category.id} variant="secondary" className="text-lg px-4 py-2 cursor-pointer hover:bg-primary/20 transition-colors">
+                        {category.name}
+                    </Badge>
+                ))}
+            </div>
+        ) : (
+            <p className="text-muted-foreground">This seller has not added any categories yet.</p>
+        )}
+      </div>
 
        <div>
         <h2 className="font-headline text-3xl font-bold mb-6">All Products</h2>
