@@ -78,12 +78,18 @@ export default function FindShopsPage() {
   };
 
   const getRequestStatusForSeller = (sellerId: string) => {
-    // Find the most recent request for this seller
+    // Find the most recent request for this seller by date
     const sellerRequests = requests
       .filter(r => r.sellerId === sellerId)
       .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+
+    if (sellerRequests.length > 0) {
+        // The status is determined by the most recent request record
+        return sellerRequests[0].status;
+    }
     
-    return sellerRequests.length > 0 ? sellerRequests[0].status : null;
+    // No request has ever been sent to this seller
+    return null;
   };
 
   if (isLoading) {
@@ -137,9 +143,17 @@ export default function FindShopsPage() {
                       Approved
                     </Button>
                   ) : status === 'rejected' ? (
-                     <Button variant="destructive" disabled>
-                      <XCircle className="mr-2" />
-                      Request Rejected
+                     <Button
+                      onClick={() => handleSendRequest(seller)}
+                      disabled={isSubmitting === seller.uid}
+                      variant="destructive"
+                    >
+                      {isSubmitting === seller.uid ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="mr-2" />
+                      )}
+                      Request Rejected - Reapply?
                     </Button>
                   ) : ( // This will cover null (no request yet) and 'left'
                     <Button
@@ -164,5 +178,3 @@ export default function FindShopsPage() {
     </div>
   );
 }
-
-    
