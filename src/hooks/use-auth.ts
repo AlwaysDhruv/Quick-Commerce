@@ -20,7 +20,7 @@ export type AuthContextType = {
   user: User | null;
   loading: boolean;
   login: (email: string, pass: string) => Promise<UserCredential>;
-  register: (email: string, pass: string, name: string, role: 'buyer' | 'seller' | 'delivery', phone?: string) => Promise<UserCredential>;
+  register: (email: string, pass: string, name: string, role: 'buyer' | 'seller' | 'delivery', phone?: string, isPhoneVerified?: boolean) => Promise<UserCredential | void>;
   logout: () => Promise<void>;
   signInWithPhone: (phone: string) => Promise<ConfirmationResult>;
   verifyOtp: (confirmationResult: ConfirmationResult, otp: string) => Promise<UserCredential>;

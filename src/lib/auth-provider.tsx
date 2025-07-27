@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           };
           setUser(userData);
            // Redirect on initial load if user is already logged in
-          if (['/login', '/register', '/'].includes(window.location.pathname)) {
+          if (['/login', '/register', '/register/address', '/'].includes(window.location.pathname)) {
             let redirectPath = '/buyer'; // Default redirect for buyer
             if (firestoreUser.role === 'seller') {
               redirectPath = '/seller';
@@ -83,21 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const verifyOtp = async (confirmationResult: ConfirmationResult, otp: string): Promise<UserCredential> => {
       setLoading(true);
       const userCredential = await confirmationResult.confirm(otp);
-      const firestoreUser = await getUserFromFirestore(userCredential.user.uid);
-      if (firestoreUser) {
-        // This is a sign-in, not registration, so we redirect
-         let redirectPath = '/buyer';
-         if (firestoreUser.role === 'seller') {
-            redirectPath = '/seller';
-         } else if (firestoreUser.role === 'delivery') {
-            redirectPath = '/delivery';
-         }
-         router.push(redirectPath);
-      } else {
-         // Should not happen for phone sign in if user already exists
-         await signOut(auth);
-         throw new Error("User data not found in database.");
-      }
+      // Don't redirect here, the caller (login/register page) will handle it
       return userCredential;
   }
 
@@ -121,8 +107,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return userCredential;
   };
 
-  const register = async (email: string, pass: string, name: string, role: 'buyer' | 'seller' | 'delivery', phone?: string): Promise<UserCredential> => {
+  const register = async (email: string, pass: string, name: string, role: 'buyer' | 'seller' | 'delivery', phone?: string, isPhoneVerified: boolean = false): Promise<UserCredential | void> => {
     setLoading(true);
+    
+    // If the user is a buyer, their auth user is created via phone OTP. 
+    // We just need to create their firestore record.
+    if (role === 'buyer' && isPhoneVerified) {
+        if (auth.currentUser) {
+            await addUserToFirestore(auth.currentUser.uid, name, email, role, phone);
+        } else {
+             throw new Error("No authenticated user found for buyer registration.");
+        }
+        return; // No UserCredential to return here
+    }
+
+    // For other roles, create user with email/password
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     await addUserToFirestore(userCredential.user.uid, name, email, role, phone);
     const firestoreUser = await getUserFromFirestore(userCredential.user.uid);
