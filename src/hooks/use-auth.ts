@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext } from 'react';
-import type { ConfirmationResult, UserCredential } from 'firebase/auth';
+import type { UserCredential } from 'firebase/auth';
 import type { Address } from '@/lib/firestore';
 
 export type User = {
@@ -20,10 +20,8 @@ export type AuthContextType = {
   user: User | null;
   loading: boolean;
   login: (email: string, pass: string) => Promise<UserCredential>;
-  register: (email: string, pass: string, name: string, role: 'buyer' | 'seller' | 'delivery', phone?: string, isPhoneVerified?: boolean) => Promise<UserCredential | void>;
+  register: (email: string, pass: string, name: string, role: 'buyer' | 'seller' | 'delivery', phone?: string) => Promise<UserCredential | void>;
   logout: () => Promise<void>;
-  signInWithPhone: (phone: string) => Promise<ConfirmationResult>;
-  verifyOtp: (confirmationResult: ConfirmationResult, otp: string) => Promise<UserCredential>;
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
