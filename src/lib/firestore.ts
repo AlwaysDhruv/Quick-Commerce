@@ -379,7 +379,7 @@ export const createDeliveryRequest = async (data: Omit<DeliveryRequest, 'id' | '
     try {
         const requestData = {
             ...data,
-            status: 'pending',
+            status: 'pending' as const,
             createdAt: Timestamp.now(),
         };
         await addDoc(collection(db, 'deliveryRequests'), requestData);
@@ -476,7 +476,7 @@ export const createLeaveRequest = async (data: Omit<LeaveRequest, 'id' | 'create
     try {
         const requestData = {
             ...data,
-            status: 'pending',
+            status: 'pending' as const,
             createdAt: Timestamp.now(),
         };
         await addDoc(collection(db, 'leaveRequests'), requestData);
