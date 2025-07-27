@@ -4,6 +4,7 @@ import { AuthProvider } from '@/lib/auth-provider';
 import { CartProvider } from '@/lib/cart-provider';
 import { Toaster } from "@/components/ui/toaster";
 import { Header } from '@/components/header';
+import { Footer } from '@/components/footer';
 
 export const metadata: Metadata = {
   title: 'SwiftShopper',
@@ -28,6 +29,7 @@ export default function RootLayout({
             <div className="relative flex min-h-screen flex-col">
               <Header />
               <main className="flex-1">{children}</main>
+              <Footer />
             </div>
             <Toaster />
           </CartProvider>
@@ -36,3 +38,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    

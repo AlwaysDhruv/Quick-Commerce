@@ -10,44 +10,20 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
   NavigationMenuLink,
-  navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
 import { getAllCategories, type Category } from '@/lib/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-const ListItem = React.forwardRef<
-  React.ElementRef<'a'>,
-  React.ComponentPropsWithoutRef<'a'> & { title: string }
->(({ className, title, children, ...props }, ref) => {
-  return (
-    <li>
-      <NavigationMenuLink asChild>
-        <a
-          ref={ref}
-          className={cn(
-            'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
-            className
-          )}
-          {...props}
-        >
-          <div className="text-sm font-medium leading-none">{title}</div>
-          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-            {children}
-          </p>
-        </a>
-      </NavigationMenuLink>
-    </li>
-  );
-});
-ListItem.displayName = 'ListItem';
 
 export function MegaMenu() {
   const [categories, setCategories] = React.useState<Category[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const { toast } = useToast();
+  const router = useRouter();
 
   React.useEffect(() => {
     const fetchCategories = async () => {
@@ -68,11 +44,16 @@ export function MegaMenu() {
     fetchCategories();
   }, [toast]);
 
+  const handleCategoryClick = (categoryName: string) => {
+    router.push(`/buyer?category=${encodeURIComponent(categoryName)}`);
+  };
+
+
   return (
     <NavigationMenu>
       <NavigationMenuList>
         <NavigationMenuItem>
-          <NavigationMenuTrigger className="text-base">Shop</NavigationMenuTrigger>
+          <NavigationMenuTrigger className="text-base">Categories</NavigationMenuTrigger>
           <NavigationMenuContent>
             {isLoading ? (
               <div className="p-4 w-[200px] h-[100px] flex items-center justify-center">
@@ -80,15 +61,18 @@ export function MegaMenu() {
               </div>
             ) : (
                 <div className="p-4 w-full md:w-[600px] lg:w-[800px]">
-                  <div className="mb-4">
-                    <h3 className="text-lg font-medium">Product Categories</h3>
-                    <p className="text-sm text-muted-foreground">Browse our wide selection of products.</p>
-                  </div>
                   <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {categories.map((category) => (
                       <li key={category.id}>
                          <NavigationMenuLink asChild>
-                            <Link href="/buyer" className="flex items-center gap-3 p-3 rounded-md hover:bg-accent transition-colors">
+                            <a
+                                href={`/buyer?category=${encodeURIComponent(category.name)}`}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    handleCategoryClick(category.name);
+                                }}
+                                className="flex items-center gap-3 p-3 rounded-md hover:bg-accent transition-colors"
+                            >
                                  <Image
                                     src={category.image || 'https://placehold.co/100x100.png'}
                                     alt={category.name}
@@ -97,7 +81,7 @@ export function MegaMenu() {
                                     className="rounded-md object-cover aspect-square"
                                 />
                                 <span className="font-medium text-sm">{category.name}</span>
-                            </Link>
+                            </a>
                          </NavigationMenuLink>
                       </li>
                     ))}
@@ -110,3 +94,5 @@ export function MegaMenu() {
     </NavigationMenu>
   );
 }
+
+    
