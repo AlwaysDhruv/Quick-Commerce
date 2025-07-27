@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -371,7 +372,10 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
-    fetchProducts();
+    if (user) {
+        fetchProducts();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const handleSelectProduct = (productId: string, checked: boolean) => {
@@ -502,7 +506,7 @@ export default function ProductsPage() {
                     />
                   </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>
+                   <TableCell>
                     <Badge variant="outline">{product.category}</Badge>
                   </TableCell>
                   <TableCell>

@@ -1,3 +1,4 @@
+
 import { doc, getDoc, setDoc, addDoc, collection, getDocs, query, where, Timestamp, updateDoc, deleteDoc, writeBatch, runTransaction } from 'firebase/firestore';
 import { db } from './firebase';
 import type { User } from '@/hooks/use-auth';
@@ -317,48 +318,47 @@ export const deleteOrderFromFirestore = async (orderId: string) => {
 };
 
 export const updateOrderStatus = async (
-  orderId: string, 
+  orderId: string,
   status: Order['status'],
   deliveryPerson?: { id: string; name: string }
 ) => {
   try {
+    const orderRef = doc(db, 'orders', orderId);
     await runTransaction(db, async (transaction) => {
-      const orderRef = doc(db, 'orders', orderId);
       const orderDoc = await transaction.get(orderRef);
       if (!orderDoc.exists()) {
-        throw new Error("Order not found!");
+        throw new Error('Order not found!');
       }
 
       const updateData: any = { status };
       const currentOrderData = orderDoc.data() as Order;
 
-      // If a delivery person is provided (on 'Shipped'), assign them.
+      // When shipping, a delivery person MUST be assigned.
       if (status === 'Shipped') {
         if (!deliveryPerson) {
-          throw new Error("A delivery person must be assigned to ship an order.");
+          throw new Error('A delivery person must be assigned to ship an order.');
         }
         updateData.deliveryPersonId = deliveryPerson.id;
         updateData.deliveryPersonName = deliveryPerson.name;
       }
-
-      // For subsequent status changes, ensure delivery person info is carried over
-      if (status === 'Out for Delivery' || status === 'Delivered') {
+      
+      // For subsequent statuses, carry over the existing assignment.
+      if ((status === 'Out for Delivery' || status === 'Delivered') && currentOrderData.deliveryPersonId) {
         updateData.deliveryPersonId = currentOrderData.deliveryPersonId;
         updateData.deliveryPersonName = currentOrderData.deliveryPersonName;
       }
-      
-      // Handle status-specific logic
+
       if (status === 'Delivered') {
         updateData.deliveredAt = Timestamp.now();
       }
-      
+
       transaction.update(orderRef, updateData);
     });
   } catch (error) {
-    console.error('Error updating order status: ', error);
+    console.error('Error updating order status:', error);
     throw error;
   }
-}
+};
 
 
 // --- DELIVERY REQUEST ---
@@ -637,5 +637,50 @@ export const approveSellerInvite = async (invite: SellerInvite) => {
         throw error;
     }
 }
-    
-    
+
+// --- CATEGORIES ---
+
+export type Category = {
+  id: string;
+  name: string;
+  sellerId: string;
+};
+
+export const addCategory = async (data: Omit<Category, 'id'>) => {
+  try {
+    await addDoc(collection(db, 'categories'), data);
+  } catch (error) {
+    console.error('Error adding category: ', error);
+    throw error;
+  }
+};
+
+export const getCategoriesBySeller = async (sellerId: string): Promise<Category[]> => {
+  try {
+    const q = query(collection(db, 'categories'), where('sellerId', '==', sellerId));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+  } catch (error) {
+    console.error('Error getting categories by seller: ', error);
+    throw error;
+  }
+};
+
+export const updateCategory = async (categoryId: string, name: string) => {
+  try {
+    const categoryRef = doc(db, 'categories', categoryId);
+    await updateDoc(categoryRef, { name });
+  } catch (error) {
+    console.error('Error updating category: ', error);
+    throw error;
+  }
+};
+
+export const deleteCategory = async (categoryId: string) => {
+  try {
+    await deleteDoc(doc(db, 'categories', categoryId));
+  } catch (error) {
+    console.error('Error deleting category: ', error);
+    throw error;
+  }
+};

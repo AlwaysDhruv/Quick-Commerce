@@ -4,12 +4,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, ListOrdered, Package, Wand2, Users, UserPlus } from 'lucide-react';
+import { Home, ListOrdered, Package, Wand2, Users, FolderKanban } from 'lucide-react';
 import { Logo } from '@/components/logo';
 
 const navItems = [
   { href: '/seller', label: 'Dashboard', icon: Home },
   { href: '/seller/products', label: 'Products', icon: Package },
+  { href: '/seller/categories', label: 'Categories', icon: FolderKanban },
   { href: '/seller/orders', label: 'Orders', icon: ListOrdered },
   { href: '/seller/delivery', label: 'Delivery Team', icon: Users },
   { href: '/seller/ai-description', label: 'AI Tools', icon: Wand2 },
