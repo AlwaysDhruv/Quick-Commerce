@@ -85,16 +85,6 @@ const geocodeAddressTool = ai.defineTool(
   }
 );
 
-
-const geocodePrompt = ai.definePrompt({
-    name: 'geocodePrompt',
-    input: { schema: GeocodeAddressInputSchema },
-    output: { schema: GeocodeAddressOutputSchema },
-    tools: [geocodeAddressTool],
-    prompt: `Based on the provided latitude and longitude, use the geocodeAddressTool to find the structured address.`,
-});
-
-
 const geocodeAddressFlow = ai.defineFlow(
   {
     name: 'geocodeAddressFlow',
@@ -102,22 +92,9 @@ const geocodeAddressFlow = ai.defineFlow(
     outputSchema: GeocodeAddressOutputSchema,
   },
   async (input) => {
-    const llmResponse = await geocodePrompt(input);
-    
-    const toolRequest = llmResponse.toolRequest('geocodeAddressTool');
-    if (toolRequest) {
-      const toolResponse = await toolRequest.run();
-      return toolResponse.output!;
-    }
-    
-    // Fallback in case the tool isn't called, though it should be.
-    return {
-      streetAddress: '',
-      city: '',
-      district: '',
-      country: '',
-      pincode: '',
-    };
+    // Directly call the tool instead of relying on a prompt to do so.
+    // This is more reliable for direct function-like behavior.
+    return await geocodeAddressTool(input);
   }
 );
 
