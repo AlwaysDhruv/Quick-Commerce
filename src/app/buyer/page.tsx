@@ -131,7 +131,7 @@ function ProductFilters({
 
   const categories = useMemo(() => {
     const cats = products.map(p => p.category);
-    return [...new Set(cats)];
+    return [...new Set(cats)].sort((a, b) => a.localeCompare(b));
   }, [products]);
 
   const handleCategoryChange = (category: string, checked: boolean) => {
@@ -158,23 +158,25 @@ function ProductFilters({
           <AccordionItem value="category">
             <AccordionTrigger className="text-base font-medium">Category</AccordionTrigger>
             <AccordionContent>
-              <div className="space-y-2">
-                {categories.map(category => (
-                  <div key={category} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={category}
-                      checked={selectedCategories.includes(category)}
-                      onCheckedChange={checked => handleCategoryChange(category, Boolean(checked))}
-                    />
-                    <label
-                      htmlFor={category}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      {category}
-                    </label>
-                  </div>
-                ))}
-              </div>
+              <ScrollArea className="h-64">
+                <div className="space-y-2 pr-4">
+                  {categories.map(category => (
+                    <div key={category} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={category}
+                        checked={selectedCategories.includes(category)}
+                        onCheckedChange={checked => handleCategoryChange(category, Boolean(checked))}
+                      />
+                      <label
+                        htmlFor={category}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {category}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="price">
@@ -398,3 +400,5 @@ export default function BuyerPage() {
     </div>
   );
 }
+
+    
