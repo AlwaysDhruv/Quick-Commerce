@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { MegaMenu } from './mega-menu';
 import { Input } from './ui/input';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Logo } from './logo';
 
 function HeaderSearchBar() {
@@ -45,20 +45,11 @@ function HeaderSearchBar() {
 export function Header() {
   const { cartCount } = useCart();
   const { user } = useAuth();
+  const [isClient, setIsClient] = useState(false);
 
-  const getDashboardLink = () => {
-    if (!user) return null;
-    switch (user.role) {
-      case 'buyer':
-        return "/buyer";
-      case 'seller':
-        return "/seller";
-      case 'delivery':
-        return "/delivery";
-      default:
-        return "/";
-    }
-  }
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -67,17 +58,17 @@ export function Header() {
             <Logo />
         </div>
         <nav className="flex items-center space-x-4 text-sm font-medium">
-          {user?.role === 'buyer' && (
+          {isClient && user?.role === 'buyer' && (
             <MegaMenu />
           )}
         </nav>
         <div className="flex-1 flex justify-center px-8">
-            {user?.role === 'buyer' && (
+            {isClient && user?.role === 'buyer' && (
                 <HeaderSearchBar />
             )}
         </div>
         <div className="flex flex-1 items-center justify-end space-x-4">
-           {user?.role === 'buyer' && (
+           {isClient && user?.role === 'buyer' && (
             <Button asChild variant="ghost" size="icon" className="relative h-9 w-9">
               <Link href="/cart">
                 <ShoppingCart className="h-5 w-5" />

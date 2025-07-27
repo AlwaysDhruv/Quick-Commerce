@@ -22,10 +22,10 @@ import { useState, useEffect } from 'react';
 export function UserNav() {
   const { user, logout, loading } = useAuth();
   const router = useRouter();
-  const [isMounted, setIsMounted] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    setIsClient(true);
   }, []);
 
   const handleLogout = async () => {
@@ -47,7 +47,7 @@ export function UserNav() {
     }
   }
 
-  if (!isMounted) {
+  if (!isClient) {
     return <Skeleton className="h-8 w-8" />;
   }
 
