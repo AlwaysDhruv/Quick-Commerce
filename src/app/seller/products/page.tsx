@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, MoreHorizontal, Loader2, Trash2, Upload } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Loader2, Trash2, Upload, Search } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -255,6 +255,7 @@ export default function ProductsPage() {
   const { toast } = useToast();
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchProducts = async () => {
     if (user) {
@@ -279,7 +280,7 @@ export default function ProductsPage() {
   };
 
   const handleSelectAll = (checked: boolean) => {
-    setSelectedProductIds(checked ? products.map(p => p.id) : []);
+    setSelectedProductIds(checked ? filteredProducts.map(p => p.id) : []);
   };
 
   const handleBulkDelete = async () => {
@@ -304,6 +305,12 @@ export default function ProductsPage() {
       setIsBulkDeleting(false);
     }
   }
+
+  const filteredProducts = useMemo(() => {
+    return products.filter(product =>
+      product.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [products, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -341,6 +348,16 @@ export default function ProductsPage() {
             <ProductDialog onProductSuccess={fetchProducts} />
         </div>
       </div>
+      
+      <div className="relative w-full max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search products by name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+      </div>
 
       <div className="rounded-lg border">
         <Table>
@@ -348,7 +365,7 @@ export default function ProductsPage() {
             <TableRow>
               <TableHead className="w-[50px]">
                 <Checkbox
-                    checked={selectedProductIds.length > 0 && selectedProductIds.length === products.length}
+                    checked={filteredProducts.length > 0 && selectedProductIds.length === filteredProducts.length}
                     onCheckedChange={(checked) => handleSelectAll(Boolean(checked))}
                     aria-label="Select all"
                   />
@@ -373,14 +390,14 @@ export default function ProductsPage() {
                   <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin text-muted-foreground" />
                 </TableCell>
               </TableRow>
-            ) : products.length === 0 ? (
+            ) : filteredProducts.length === 0 ? (
                 <TableRow>
                     <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
                     You haven&apos;t added any products yet.
                     </TableCell>
                 </TableRow>
             ) : (
-              products.map((product) => (
+              filteredProducts.map((product) => (
                 <TableRow key={product.id} data-state={selectedProductIds.includes(product.id) && "selected"}>
                    <TableCell>
                       <Checkbox
@@ -442,5 +459,3 @@ export default function ProductsPage() {
     </div>
   );
 }
-
-    

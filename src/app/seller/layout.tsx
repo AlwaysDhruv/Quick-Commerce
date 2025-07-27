@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, ListOrdered, Package, Wand2, Users, FolderKanban } from 'lucide-react';
+import { Home, ListOrdered, Package, Wand2, Users, FolderKanban, Database } from 'lucide-react';
 import { Logo } from '@/components/logo';
 
 const navItems = [
@@ -14,6 +14,7 @@ const navItems = [
   { href: '/seller/orders', label: 'Orders', icon: ListOrdered },
   { href: '/seller/delivery', label: 'Delivery Team', icon: Users },
   { href: '/seller/ai-description', label: 'AI Tools', icon: Wand2 },
+  { href: '/seller/seed', label: 'Seed Data', icon: Database },
 ];
 
 export default function SellerLayout({ children }: { children: React.ReactNode }) {

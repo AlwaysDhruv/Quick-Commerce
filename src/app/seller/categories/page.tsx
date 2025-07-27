@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -43,7 +43,7 @@ import {
   updateCategory,
   deleteCategory,
 } from '@/lib/firestore';
-import { Loader2, PlusCircle, Trash2, Edit } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Edit, Search } from 'lucide-react';
 
 function CategoryDialog({
   onSuccess,
@@ -154,7 +154,6 @@ function DeleteCategoryDialog({
       await deleteCategory(category.id);
       toast({ title: 'Category Deleted' });
       onSuccess();
-      // No need to setOpen(false) as the dialog will close on action
     } catch (error) {
       console.error(error);
       toast({ title: 'Error deleting category', variant: 'destructive' });
@@ -198,6 +197,7 @@ export default function CategoriesPage() {
   const { user } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchCategories = async () => {
     if (!user) return;
@@ -211,7 +211,14 @@ export default function CategoriesPage() {
     if (user) {
       fetchCategories();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  const filteredCategories = useMemo(() => {
+    return categories.filter(category =>
+      category.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [categories, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -223,6 +230,16 @@ export default function CategoriesPage() {
           </p>
         </div>
         <CategoryDialog onSuccess={fetchCategories} />
+      </div>
+
+      <div className="relative w-full max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search categories..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
       <Card>
@@ -245,17 +262,17 @@ export default function CategoriesPage() {
                     <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
-              ) : categories.length === 0 ? (
+              ) : filteredCategories.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={2}
                     className="py-10 text-center text-muted-foreground"
                   >
-                    You haven't created any categories yet.
+                    No categories found.
                   </TableCell>
                 </TableRow>
               ) : (
-                categories.map((cat) => (
+                filteredCategories.map((cat) => (
                   <TableRow key={cat.id}>
                     <TableCell className="font-medium">{cat.name}</TableCell>
                     <TableCell className="text-right">
