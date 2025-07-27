@@ -84,7 +84,7 @@ export function ProductDetailDialog({ product, children }: ProductDetailDialogPr
                         <span>Sold by <strong className="text-foreground">{product.sellerName}</strong></span>
                     </div>
                     <Button variant="link" asChild className="text-accent h-auto p-0">
-                        <Link href={`/seller/${product.sellerId}`}>
+                        <Link href={`/buyer/seller/${product.sellerId}`}>
                             View Profile
                             <ArrowRight className="ml-1 h-4 w-4" />
                         </Link>

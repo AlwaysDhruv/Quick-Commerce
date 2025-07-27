@@ -90,6 +90,18 @@ export const getBuyerCountFromFirestore = async (): Promise<number> => {
   }
 }
 
+export const getUniqueBuyerCountForSeller = async (sellerId: string): Promise<number> => {
+    try {
+        const q = query(collection(db, 'orders'), where('sellerId', '==', sellerId));
+        const querySnapshot = await getDocs(q);
+        const buyerIds = new Set(querySnapshot.docs.map(doc => doc.data().buyerId));
+        return buyerIds.size;
+    } catch (error) {
+        console.error('Error getting unique buyer count for seller: ', error);
+        throw error;
+    }
+}
+
 
 export const getAllSellers = async (): Promise<User[]> => {
     try {
@@ -679,6 +691,17 @@ export const getCategoriesBySeller = async (sellerId: string): Promise<Category[
     throw error;
   }
 };
+
+export const getCategoryCountForSeller = async (sellerId: string): Promise<number> => {
+    try {
+        const q = query(collection(db, 'categories'), where('sellerId', '==', sellerId));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.size;
+    } catch (error) {
+        console.error('Error getting category count for seller: ', error);
+        throw error;
+    }
+}
 
 export const updateCategory = async (categoryId: string, data: { name: string; image?: string }) => {
   try {
