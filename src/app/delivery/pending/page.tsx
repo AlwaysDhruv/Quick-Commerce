@@ -8,8 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getOrdersByDeliveryPerson, updateOrderStatus, type Order } from '@/lib/firestore';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2, ChevronDown, CheckCircle, PackageCheck, Package, Bell, MapPin } from 'lucide-react';
-import { format, isToday } from 'date-fns';
+import { Loader2, ChevronDown, CheckCircle, PackageCheck, MapPin } from 'lucide-react';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import React from 'react';
@@ -155,21 +155,7 @@ function OrderRow({ order, onOrderUpdated }: { order: Order, onOrderUpdated: () 
   )
 }
 
-function StatCard({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) {
-    return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{title}</CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{value}</div>
-            </CardContent>
-        </Card>
-    );
-}
-
-export default function DeliveryOrdersPage() {
+export default function PendingOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
@@ -177,11 +163,9 @@ export default function DeliveryOrdersPage() {
 
   const fetchOrders = async () => {
     if (user?.uid) {
-      // Don't set loading to true here to avoid flickering on real-time updates
       const fetchedOrders = await getOrdersByDeliveryPerson(user.uid);
-      fetchedOrders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
       setOrders(fetchedOrders);
-      setIsLoading(false); // Set loading to false after the first fetch
+      setIsLoading(false);
     } else {
         setIsLoading(false);
     }
@@ -189,79 +173,43 @@ export default function DeliveryOrdersPage() {
 
   useEffect(() => {
     if (user) {
-        setIsLoading(true); // Set loading true only on initial component mount with user
+        setIsLoading(true);
         fetchOrders();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Real-time listener for new/updated orders
+  // Real-time listener
   useEffect(() => {
     if (!user?.uid) return;
-
     const q = query(
         collection(db, 'orders'),
         where('deliveryPersonId', '==', user.uid)
     );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const initialLoad = isLoading;
-        let newAssignments = false;
-
-        snapshot.docChanges().forEach((change) => {
-             const changedOrder = { id: change.doc.id, ...change.doc.data() } as Order;
-             // Check for new assignments specifically
-             if (change.type === "added" && !orders.some(o => o.id === changedOrder.id)) {
-                 newAssignments = true;
-             }
-        });
-        
-        // Refetch the full list if there are any changes
-        // This is simpler and more reliable than trying to merge changes manually
-        if (!snapshot.metadata.hasPendingWrites) {
-            fetchOrders();
-
-            // Show toast only for new assignments after the initial data load
-            if (!initialLoad && newAssignments) {
-                toast({
-                    title: 'New Order Assigned!',
-                    description: 'You have a new order to deliver.',
-                });
-            }
-        }
+    const unsubscribe = onSnapshot(q, () => {
+        fetchOrders();
     });
-
     return () => unsubscribe();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid, isLoading]); // Re-run when user or initial loading state changes
+  }, [user?.uid]);
 
-
-  const stats = useMemo(() => {
-    const pending = orders.filter(o => o.status !== 'Delivered').length;
-    const completedToday = orders.filter(o => o.status === 'Delivered' && o.deliveredAt && isToday(o.deliveredAt.toDate())).length;
-    return { pending, completedToday };
+  const pendingOrders = useMemo(() => {
+    return orders
+      .filter(order => order.status !== 'Delivered')
+      .sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis()); // Show oldest first
   }, [orders]);
-
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold font-headline">All Assigned Orders</h1>
+        <h1 className="text-2xl font-bold font-headline">Pending Orders</h1>
         <p className="text-muted-foreground">
-          A complete history of orders assigned to you for <strong>{user?.associatedSellerName || '...'}</strong>.
+          These are your active orders that need to be delivered.
         </p>
-      </div>
-
-       <div className="grid gap-4 md:grid-cols-3">
-            <StatCard title="Total Assigned" value={orders.length} icon={Package} />
-            <StatCard title="Pending Deliveries" value={stats.pending} icon={Bell} />
-            <StatCard title="Completed Today" value={stats.completedToday} icon={PackageCheck} />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Your Deliveries</CardTitle>
-          <CardDescription>A list of all orders assigned to you for delivery, including completed ones.</CardDescription>
+          <CardTitle>Your Active Deliveries</CardTitle>
+          <CardDescription>A list of orders that are currently 'Shipped' or 'Out for Delivery'.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -281,14 +229,14 @@ export default function DeliveryOrdersPage() {
                     <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
-              ) : orders.length === 0 ? (
+              ) : pendingOrders.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
-                    You have no orders to deliver yet.
+                    You have no pending orders. Great job!
                   </TableCell>
                 </TableRow>
               ) : (
-                orders.map((order) => (
+                pendingOrders.map((order) => (
                   <OrderRow key={order.id} order={order} onOrderUpdated={fetchOrders} />
                 ))
               )}

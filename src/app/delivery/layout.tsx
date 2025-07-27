@@ -4,12 +4,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, ListOrdered, Package, Truck, Store } from 'lucide-react';
+import { Home, ListOrdered, Package, Truck, Store, ListChecks } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
 const navItems = [
   { href: '/delivery', label: 'Dashboard', icon: Home },
-  { href: '/delivery/orders', label: 'My Orders', icon: Truck },
+  { href: '/delivery/orders', label: 'All Orders', icon: Truck },
+  { href: '/delivery/pending', label: 'Pending Orders', icon: ListChecks },
   { href: '/delivery/shops', label: 'Find Shops', icon: Store },
 ];
 
@@ -22,8 +23,8 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
       <aside className="hidden md:flex flex-col gap-6">
         <nav className="flex flex-col gap-2">
           {navItems.map((item) => {
-            // Conditionally render "My Orders" only if associated with a seller
-            if (item.href === '/delivery/orders' && !user?.associatedSellerId) {
+            // Conditionally render "My Orders" and "Pending Orders" only if associated with a seller
+            if ((item.href === '/delivery/orders' || item.href === '/delivery/pending') && !user?.associatedSellerId) {
               return null;
             }
             const isActive = pathname === item.href;
