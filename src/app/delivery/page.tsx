@@ -91,14 +91,18 @@ function Invitations({ user, onAction }: { user: User, onAction: () => void }) {
     const [isProcessing, setIsProcessing] = useState<string | null>(null);
     const { toast } = useToast();
 
-    const fetchInvites = async () => {
-        setIsLoading(true);
-        const fetchedInvites = await getInvitesForDeliveryPerson(user.uid);
-        setInvites(fetchedInvites);
-        setIsLoading(false);
-    }
-
     useEffect(() => {
+        const fetchInvites = async () => {
+            if (!user) {
+                setIsLoading(false);
+                return;
+            };
+            setIsLoading(true);
+            const fetchedInvites = await getInvitesForDeliveryPerson(user.uid);
+            setInvites(fetchedInvites);
+            setIsLoading(false);
+        }
+
         fetchInvites();
     }, [user]);
 
@@ -130,7 +134,9 @@ function Invitations({ user, onAction }: { user: User, onAction: () => void }) {
             toast({
                 title: 'Invitation Rejected',
             });
-            fetchInvites(); // Just refetch invites
+            // Just refetch invites
+            const fetchedInvites = await getInvitesForDeliveryPerson(user.uid);
+            setInvites(fetchedInvites);
         } catch (error) {
             console.error(error);
             toast({
@@ -241,7 +247,7 @@ export default function DeliveryDashboard() {
         </Card>
       ) : (
          <div className="space-y-8">
-            <Invitations user={user!} onAction={() => window.location.reload()} />
+            {user && <Invitations user={user} onAction={() => window.location.reload()} />}
             <div className="text-center py-20 rounded-lg border-2 border-dashed">
                 <h2 className="text-xl font-semibold">You're a free agent!</h2>
                 <p className="text-muted-foreground mt-2">You are not yet associated with any seller's shop.</p>
