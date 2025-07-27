@@ -88,17 +88,15 @@ export function MegaMenu() {
                     {categories.map((category) => (
                       <li key={category.id}>
                          <NavigationMenuLink asChild>
-                            <Link href="/buyer" legacyBehavior passHref>
-                                <a className="flex items-center gap-3 p-3 rounded-md hover:bg-accent transition-colors">
-                                     <Image
-                                        src={category.image || 'https://placehold.co/100x100.png'}
-                                        alt={category.name}
-                                        width={40}
-                                        height={40}
-                                        className="rounded-md object-cover aspect-square"
-                                    />
-                                    <span className="font-medium text-sm">{category.name}</span>
-                                </a>
+                            <Link href="/buyer" className="flex items-center gap-3 p-3 rounded-md hover:bg-accent transition-colors">
+                                 <Image
+                                    src={category.image || 'https://placehold.co/100x100.png'}
+                                    alt={category.name}
+                                    width={40}
+                                    height={40}
+                                    className="rounded-md object-cover aspect-square"
+                                />
+                                <span className="font-medium text-sm">{category.name}</span>
                             </Link>
                          </NavigationMenuLink>
                       </li>
