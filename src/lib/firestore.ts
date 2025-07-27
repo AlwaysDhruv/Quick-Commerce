@@ -90,6 +90,20 @@ export const getAllSellers = async (): Promise<User[]> => {
     }
 }
 
+export const getAvailableDeliveryPersonnel = async (): Promise<User[]> => {
+    try {
+        const q = query(collection(db, 'users'), 
+            where('role', '==', 'delivery'),
+            where('associatedSellerId', '==', null)
+        );
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
+    } catch (error) {
+        console.error('Error getting available delivery personnel from Firestore: ', error);
+        throw error;
+    }
+}
+
 
 // --- PRODUCT ---
 
@@ -257,6 +271,23 @@ export const getOrdersByBuyer = async (buyerId: string): Promise<Order[]> => {
         throw error;
     }
 }
+
+export const getOrdersByDeliveryPerson = async (deliveryPersonId: string): Promise<Order[]> => {
+    try {
+        const userDoc = await getDoc(doc(db, 'users', deliveryPersonId));
+        const sellerId = userDoc.data()?.associatedSellerId;
+
+        if (!sellerId) return [];
+
+        const q = query(collection(db, "orders"), where("sellerId", "==", sellerId));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+    } catch (error) {
+        console.error("Error getting orders by delivery person from Firestore: ", error);
+        throw error;
+    }
+}
+
 
 export const deleteOrderFromFirestore = async (orderId: string) => {
   try {
@@ -473,4 +504,89 @@ export const approveLeaveRequest = async (request: LeaveRequest) => {
     }
 }
 
+// --- SELLER INVITES ---
+
+export type SellerInviteStatus = 'pending' | 'accepted' | 'rejected';
+
+export type SellerInvite = {
+  id: string;
+  sellerId: string;
+  sellerName: string;
+  deliveryPersonId: string;
+  deliveryPersonName: string;
+  status: SellerInviteStatus;
+  createdAt: Timestamp;
+};
+
+export const createSellerInvite = async (data: Omit<SellerInvite, 'id' | 'createdAt' | 'status'>) => {
+    try {
+        const inviteData = {
+            ...data,
+            status: 'pending' as const,
+            createdAt: Timestamp.now(),
+        };
+        await addDoc(collection(db, 'sellerInvites'), inviteData);
+    } catch (error) {
+        console.error('Error creating seller invite: ', error);
+        throw error;
+    }
+};
+
+export const getInvitesForDeliveryPerson = async (deliveryPersonId: string): Promise<SellerInvite[]> => {
+    try {
+        const q = query(
+            collection(db, 'sellerInvites'),
+            where('deliveryPersonId', '==', deliveryPersonId),
+            where('status', '==', 'pending')
+        );
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SellerInvite));
+    } catch (error) {
+        console.error('Error getting invites for delivery person: ', error);
+        throw error;
+    }
+}
+
+export const getSentInvitesForSeller = async (sellerId: string): Promise<SellerInvite[]> => {
+    try {
+        const q = query(collection(db, 'sellerInvites'), where('sellerId', '==', sellerId));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SellerInvite));
+    } catch (error) {
+        console.error('Error getting sent invites for seller: ', error);
+        throw error;
+    }
+}
+
+export const updateSellerInviteStatus = async (inviteId: string, status: SellerInviteStatus) => {
+    try {
+        const inviteRef = doc(db, 'sellerInvites', inviteId);
+        await updateDoc(inviteRef, { status });
+    } catch (error) {
+        console.error('Error updating seller invite status: ', error);
+        throw error;
+    }
+};
+
+export const approveSellerInvite = async (invite: SellerInvite) => {
+    try {
+        const batch = writeBatch(db);
+        
+        // Update the invite status
+        const inviteRef = doc(db, 'sellerInvites', invite.id);
+        batch.update(inviteRef, { status: 'accepted' });
+
+        // Update the delivery person's user document
+        const deliveryPersonRef = doc(db, 'users', invite.deliveryPersonId);
+        batch.update(deliveryPersonRef, { 
+            associatedSellerId: invite.sellerId,
+            associatedSellerName: invite.sellerName
+        });
+
+        await batch.commit();
+    } catch (error) {
+        console.error('Error approving seller invite: ', error);
+        throw error;
+    }
+}
     

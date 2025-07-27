@@ -17,10 +17,11 @@ import {
   type LeaveRequest
 } from '@/lib/firestore';
 import { useAuth, type User } from '@/hooks/use-auth';
-import { Loader2, Check, X, Mail, Users, LogOut } from 'lucide-react';
+import { Loader2, Check, X, Mail, Users, LogOut, UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 export default function SellerDeliveryPage() {
   const [joinRequests, setJoinRequests] = useState<DeliveryRequest[]>([]);
@@ -56,7 +57,9 @@ export default function SellerDeliveryPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    if (user) {
+        fetchData();
+    }
   }, [user]);
 
   const handleApproveJoin = async (request: DeliveryRequest) => {
@@ -126,9 +129,17 @@ export default function SellerDeliveryPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold font-headline">Delivery Management</h1>
-        <p className="text-muted-foreground">Manage your delivery team and incoming requests.</p>
+      <div className="flex items-center justify-between">
+        <div>
+            <h1 className="text-2xl font-bold font-headline">Delivery Management</h1>
+            <p className="text-muted-foreground">Manage your delivery team and incoming requests.</p>
+        </div>
+        <Button asChild>
+            <Link href="/seller/delivery/find">
+                <UserPlus className="mr-2" />
+                Find Staff
+            </Link>
+        </Button>
       </div>
 
        <Tabs defaultValue="team">
