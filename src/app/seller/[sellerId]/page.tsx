@@ -1,16 +1,16 @@
 
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 import { getProductsBySeller, getSellerProfile } from '@/lib/firestore';
 import type { Product } from '@/lib/mock-data';
 import { ProductCard } from '@/components/product-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Frown } from 'lucide-react';
+import { Frown, Store } from 'lucide-react';
 
 export default function SellerProfilePage({ params }: { params: { sellerId: string } }) {
-  const { sellerId } = use(params);
+  const { sellerId } = params;
   const [sellerName, setSellerName] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,7 +29,6 @@ export default function SellerProfilePage({ params }: { params: { sellerId: stri
 
         const sellerProducts = await getProductsBySeller(sellerId);
         
-        // We need to manually add sellerName to each product since getProductsBySeller doesn't
         const productsWithSellerName = sellerProducts.map(p => ({ ...p, sellerName: sellerData.name }));
         setProducts(productsWithSellerName);
 
@@ -49,7 +48,8 @@ export default function SellerProfilePage({ params }: { params: { sellerId: stri
   if (isLoading) {
     return (
       <div className="container py-8">
-        <Skeleton className="h-10 w-1/3 mb-8" />
+        <Skeleton className="h-10 w-1/3 mb-2" />
+        <Skeleton className="h-4 w-1/4 mb-8" />
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="space-y-4">
@@ -77,9 +77,9 @@ export default function SellerProfilePage({ params }: { params: { sellerId: stri
 
   return (
     <div className="container py-8">
-      <div className="mb-8">
-        <p className="text-sm text-muted-foreground">Products from</p>
-        <h1 className="font-headline text-3xl font-bold">{sellerName}'s Store</h1>
+      <div className="mb-8 p-6 rounded-lg bg-card border">
+        <p className="text-sm text-muted-foreground">Welcome to the storefront of</p>
+        <h1 className="font-headline text-4xl font-bold text-primary">{sellerName}'s Store</h1>
       </div>
        {products.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -89,8 +89,9 @@ export default function SellerProfilePage({ params }: { params: { sellerId: stri
         </div>
       ) : (
         <div className="mt-10 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 py-20 text-center">
-            <h3 className="text-xl font-semibold">No Products Yet</h3>
-            <p className="mt-2 text-muted-foreground">{sellerName} hasn't listed any products.</p>
+            <Store className="h-16 w-16 text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold">This Shop is Getting Started</h3>
+            <p className="mt-2 text-muted-foreground">{sellerName} hasn't listed any products yet. Check back soon!</p>
         </div>
       )}
     </div>
