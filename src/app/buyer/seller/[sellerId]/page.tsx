@@ -33,7 +33,7 @@ function StatCard({ title, value, icon: Icon, isLoading }: { title: string, valu
     );
 }
 
-export default function BuyerSellerProfilePage({ params }: { params: { sellerId: string } }) {
+export default function BuyerSellerProfilePage({ params: { sellerId } }: { params: { sellerId: string } }) {
   const [sellerName, setSellerName] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState({ productCount: 0, categoryCount: 0, buyerCount: 0 });
@@ -41,21 +41,21 @@ export default function BuyerSellerProfilePage({ params }: { params: { sellerId:
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (params.sellerId) {
+    if (sellerId) {
       const fetchSellerData = async () => {
         setIsLoading(true);
         setError(null);
         try {
-          const sellerData = await getSellerProfile(params.sellerId);
+          const sellerData = await getSellerProfile(sellerId);
           if (!sellerData) {
             throw new Error('Seller not found.');
           }
           setSellerName(sellerData.name);
 
           const [sellerProducts, categoryCount, buyerCount] = await Promise.all([
-            getProductsBySeller(params.sellerId),
-            getCategoryCountForSeller(params.sellerId),
-            getUniqueBuyerCountForSeller(params.sellerId)
+            getProductsBySeller(sellerId),
+            getCategoryCountForSeller(sellerId),
+            getUniqueBuyerCountForSeller(sellerId)
           ]);
           
           const productsWithSellerName = sellerProducts.map(p => ({ ...p, sellerName: sellerData.name }));
@@ -75,7 +75,7 @@ export default function BuyerSellerProfilePage({ params }: { params: { sellerId:
       };
       fetchSellerData();
     }
-  }, [params.sellerId]);
+  }, [sellerId]);
 
   if (error) {
     return (
