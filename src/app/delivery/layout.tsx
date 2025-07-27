@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Home, ListOrdered, Package, Truck, Store } from 'lucide-react';
-import { Logo } from '@/components/logo';
 import { useAuth } from '@/hooks/use-auth';
 
 const navItems = [
@@ -21,9 +20,6 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
   return (
     <div className="container grid min-h-[calc(100vh-4rem)] grid-cols-1 md:grid-cols-[240px_1fr] gap-8 py-12">
       <aside className="hidden md:flex flex-col gap-6">
-        <div className="px-2">
-         <Logo />
-        </div>
         <nav className="flex flex-col gap-2">
           {navItems.map((item) => {
             // Conditionally render "My Orders" only if associated with a seller

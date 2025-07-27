@@ -6,7 +6,6 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { useCart } from '@/hooks/use-cart';
 import { ShoppingCart, Search } from 'lucide-react';
-import { Logo } from './logo';
 import { UserNav } from './user-nav';
 import { useAuth } from '@/hooks/use-auth';
 import { MegaMenu } from './mega-menu';
@@ -63,13 +62,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
-        <Logo />
-        <div className="flex-1 flex justify-center px-8">
-            {user?.role === 'buyer' && (
-                <HeaderSearchBar />
-            )}
-        </div>
-        <nav className="flex items-center space-x-4 text-sm font-medium">
+        <nav className="flex items-center space-x-4 text-sm font-medium mr-6">
           {user?.role === 'buyer' && (
             <MegaMenu />
           )}
@@ -79,7 +72,12 @@ export function Header() {
             </Link>
           )}
         </nav>
-        <div className="flex items-center justify-end space-x-4 ml-4">
+        <div className="flex-1 flex justify-center px-8">
+            {user?.role === 'buyer' && (
+                <HeaderSearchBar />
+            )}
+        </div>
+        <div className="flex flex-1 items-center justify-end space-x-4">
            {user?.role === 'buyer' && (
             <Button asChild variant="ghost" size="icon" className="relative h-9 w-9">
               <Link href="/cart">
