@@ -9,9 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { recommendProducts } from '@/ai/flows/recommend-products';
-import { Wand2, Loader2, ShoppingCart, Lightbulb, Filter, Search } from 'lucide-react';
+import { Wand2, Loader2, ShoppingCart, Lightbulb, Filter, Search, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getProductsFromFirestore } from '@/lib/firestore';
+import { getProductsFromFirestore, getCategoriesBySeller } from '@/lib/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCart } from '@/hooks/use-cart';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -299,32 +299,74 @@ function CartRecommendations({ allProducts }: { allProducts: Product[] }) {
   )
 }
 
+function CategoryBoxes({ categories, selectedCategories, onCategorySelect }: { categories: string[], selectedCategories: string[], onCategorySelect: (category: string) => void }) {
+    if (categories.length === 0) return null;
+
+    return (
+        <div className="mb-12">
+            <h2 className="font-headline text-2xl font-bold mb-4">Shop by Category</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {categories.map(category => (
+                    <Button
+                        key={category}
+                        variant={selectedCategories.includes(category) ? "default" : "outline"}
+                        onClick={() => onCategorySelect(category)}
+                        className="h-auto py-4 text-center justify-center"
+                    >
+                        {category}
+                    </Button>
+                ))}
+            </div>
+        </div>
+    )
+}
+
 export default function BuyerPage() {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
+  const [allCategories, setAllCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState({ categories: [] as string[], priceRange: [0, 500] as [number, number] });
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const showFilters = useMemo(() => searchQuery.length > 0 || filters.categories.length > 0, [searchQuery, filters.categories]);
+
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchProductsAndCategories = async () => {
       setIsLoading(true);
       const fetchedProducts = await getProductsFromFirestore();
+      const uniqueCategories = [...new Set(fetchedProducts.map(p => p.category))].sort();
+      
       setProducts(fetchedProducts);
+      setAllCategories(uniqueCategories);
       setIsLoading(false);
     };
 
-    fetchProducts();
+    fetchProductsAndCategories();
   }, []);
 
   const handleAiSuggestion = (suggestion: string) => {
-    // Check if the suggestion is already a selected category
     if (!filters.categories.includes(suggestion)) {
       setFilters(prevFilters => ({
         ...prevFilters,
         categories: [...prevFilters.categories, suggestion],
       }));
     }
+  }
+
+  const handleCategoryBoxClick = (category: string) => {
+     setFilters(prev => ({
+        ...prev,
+        categories: prev.categories.includes(category)
+            ? prev.categories.filter(c => c !== category)
+            : [...prev.categories, category]
+     }));
+  }
+
+  const clearAllFilters = () => {
+    setFilters({ categories: [], priceRange: [0, 500] });
+    setSearchQuery('');
   }
 
   const filteredProducts = useMemo(() => {
@@ -337,40 +379,49 @@ export default function BuyerPage() {
   }, [products, filters, searchQuery]);
 
   return (
-    <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
-        <aside className="md:col-span-1 -mx-6 -mt-6 -mb-6 md:m-0">
+    <div className="space-y-8">
+      {/* Top Section: Search and Categories */}
+      <div className="space-y-6">
+        <div className="relative w-full max-w-2xl mx-auto">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+                placeholder="Search for products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 h-12 text-lg"
+            />
+        </div>
+        {!showFilters && <CategoryBoxes categories={allCategories} selectedCategories={filters.categories} onCategorySelect={handleCategoryBoxClick} />}
+      </div>
+
+       <CartRecommendations allProducts={products} />
+
+      {/* Main Content: Filters and Products */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
+        {showFilters && (
+          <aside className="lg:col-span-1">
             <div className="sticky top-24">
-              <ScrollArea className="h-[calc(100vh-8rem)] p-6 md:p-0 md:pr-6">
+              <ScrollArea className="h-[calc(100vh-8rem)]">
                 <div className="space-y-6">
                   <AiSearch products={products} onSuggestionClick={handleAiSuggestion} />
                   <ProductFilters products={products} filters={filters} onFilterChange={setFilters} />
                 </div>
               </ScrollArea>
             </div>
-        </aside>
+          </aside>
+        )}
 
-        <main className="md:col-span-3">
-             <CartRecommendations allProducts={products} />
-            
+        <main className={showFilters ? 'lg:col-span-3' : 'lg:col-span-4'}>
             <div>
                 <div className="flex justify-between items-center mb-6 gap-4">
-                  <div className="relative w-full max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search for products..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
                   <h2 className="font-headline text-xl font-bold whitespace-nowrap">
-                    All Products ({filteredProducts.length})
+                    {showFilters ? `Results (${filteredProducts.length})` : 'All Products'}
                   </h2>
-                   {(filters.categories.length > 0 || searchQuery) && (
-                      <Button variant="ghost" onClick={() => {
-                        setFilters(f => ({ ...f, categories: []}));
-                        setSearchQuery('');
-                      }}>Clear Filters</Button>
+                   {showFilters && (
+                      <Button variant="ghost" onClick={clearAllFilters}>
+                        <X className="mr-2" />
+                        Clear All Filters
+                      </Button>
                    )}
                 </div>
                 {isLoading ? (
@@ -397,8 +448,7 @@ export default function BuyerPage() {
                 )}
             </div>
         </main>
+      </div>
     </div>
   );
 }
-
-    

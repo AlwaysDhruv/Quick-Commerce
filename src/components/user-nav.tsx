@@ -13,7 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
-import { LayoutDashboard, LogIn, LogOut, UserPlus, Loader2, ListOrdered } from 'lucide-react';
+import { LayoutDashboard, LogIn, LogOut, UserPlus, Loader2, ListOrdered, ShoppingBag, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -37,7 +37,7 @@ export function UserNav() {
     if (!user) return "/";
     switch (user.role) {
       case 'buyer':
-        return "/buyer/profile";
+        return "/buyer";
       case 'seller':
         return "/seller";
       case 'delivery':
@@ -93,24 +93,39 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
-            <Link href={getDashboardLink()}>
-              <LayoutDashboard className="mr-2 h-4 w-4" />
-              <span>Dashboard</span>
-            </Link>
-          </DropdownMenuItem>
-           {user.role === 'buyer' && (
-             <DropdownMenuItem asChild>
+          {user.role === 'buyer' ? (
+            <>
+              <DropdownMenuItem asChild>
+                <Link href="/buyer">
+                  <ShoppingBag className="mr-2" />
+                  <span>Shop</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/buyer/profile">
+                  <User className="mr-2" />
+                  <span>My Profile</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link href="/buyer/orders">
-                  <ListOrdered className="mr-2 h-4 w-4" />
+                  <ListOrdered className="mr-2" />
                   <span>My Orders</span>
                 </Link>
               </DropdownMenuItem>
-            )}
+            </>
+          ) : (
+            <DropdownMenuItem asChild>
+              <Link href={getDashboardLink()}>
+                <LayoutDashboard className="mr-2" />
+                <span>Dashboard</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
-          <LogOut className="mr-2 h-4 w-4" />
+          <LogOut className="mr-2" />
           <span>Log out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
