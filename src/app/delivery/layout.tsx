@@ -8,8 +8,8 @@ import { Home, ListOrdered, Package, Truck, Store } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
 const navItems = [
-  { href: '/delivery/orders', label: 'My Orders', icon: Truck },
   { href: '/delivery', label: 'Dashboard', icon: Home },
+  { href: '/delivery/orders', label: 'My Orders', icon: Truck },
   { href: '/delivery/shops', label: 'Find Shops', icon: Store },
 ];
 
