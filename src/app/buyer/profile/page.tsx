@@ -94,9 +94,15 @@ function AddressDialog({ user, onAddressUpdated }: { user: any, onAddressUpdated
         }
         setIsSaving(true);
         try {
-            await updateUserAddress(user.uid, {
-                fullName, phone, streetAddress, city, district, country, pincode, latitude, longitude
-            });
+            const addressToSave: Address = {
+                fullName, phone, streetAddress, city, district, country, pincode
+            };
+            if (typeof latitude === 'number' && typeof longitude === 'number') {
+                addressToSave.latitude = latitude;
+                addressToSave.longitude = longitude;
+            }
+
+            await updateUserAddress(user.uid, addressToSave);
             toast({ title: 'Address Saved!', description: 'Your default shipping address has been updated.' });
             onAddressUpdated();
             setOpen(false);

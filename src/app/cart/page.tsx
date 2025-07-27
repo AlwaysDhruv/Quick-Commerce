@@ -72,7 +72,7 @@ function ShippingAddressForm({ onConfirm, onCancel, user }: { onConfirm: (addres
         toast({ title: "All fields are required", description: "Please fill in all address details.", variant: "destructive"});
         return;
     }
-    onConfirm({
+    const addressToConfirm: Address = {
       fullName,
       phone,
       streetAddress,
@@ -80,9 +80,12 @@ function ShippingAddressForm({ onConfirm, onCancel, user }: { onConfirm: (addres
       district,
       country,
       pincode,
-      latitude,
-      longitude,
-    });
+    };
+    if (typeof latitude === 'number' && typeof longitude === 'number') {
+        addressToConfirm.latitude = latitude;
+        addressToConfirm.longitude = longitude;
+    }
+    onConfirm(addressToConfirm);
   };
 
   return (
