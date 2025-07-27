@@ -189,6 +189,7 @@ export type Order = {
   total: number;
   status: 'Processing' | 'Shipped' | 'Out for Delivery' | 'Delivered';
   createdAt: Timestamp;
+  deliveredAt?: Timestamp | null;
   sellerId: string;
   deliveryPersonId?: string | null;
   deliveryPersonName?: string | null;
@@ -246,6 +247,17 @@ export const getOrdersBySeller = async (sellerId: string): Promise<Order[]> => {
   }
 };
 
+export const getOrdersByBuyer = async (buyerId: string): Promise<Order[]> => {
+    try {
+        const q = query(collection(db, "orders"), where("buyerId", "==", buyerId));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+    } catch (error) {
+        console.error("Error getting orders by buyer from Firestore: ", error);
+        throw error;
+    }
+}
+
 export const deleteOrderFromFirestore = async (orderId: string) => {
   try {
     await deleteDoc(doc(db, 'orders', orderId));
@@ -258,7 +270,11 @@ export const deleteOrderFromFirestore = async (orderId: string) => {
 export const updateOrderStatus = async (orderId: string, status: Order['status']) => {
   try {
     const orderRef = doc(db, 'orders', orderId);
-    await updateDoc(orderRef, { status });
+    const updateData: { status: Order['status'], deliveredAt?: Timestamp } = { status };
+    if (status === 'Delivered') {
+        updateData.deliveredAt = Timestamp.now();
+    }
+    await updateDoc(orderRef, updateData);
   } catch (error) {
     console.error('Error updating order status: ', error);
     throw error;
@@ -456,3 +472,5 @@ export const approveLeaveRequest = async (request: LeaveRequest) => {
         throw error;
     }
 }
+
+    

@@ -40,12 +40,11 @@ export default function FindShopsPage() {
   };
 
   useEffect(() => {
-    // Check if the user is already associated with a seller.
-    if (user?.associatedSellerId) {
-      // If so, maybe redirect them or show a different UI.
-      // For now, we'll just let them see the shops page.
+    // This check is now also performed on the main return
+    // So this useEffect is mostly for initial data fetch
+    if (user) {
+      fetchData();
     }
-    fetchData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
@@ -165,3 +164,5 @@ export default function FindShopsPage() {
     </div>
   );
 }
+
+    

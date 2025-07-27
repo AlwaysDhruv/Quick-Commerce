@@ -1,19 +1,21 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getOrdersBySeller, updateOrderStatus, type Order } from '@/lib/firestore';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2, ChevronDown, CheckCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { Loader2, ChevronDown, CheckCircle, PackageCheck, Package, Bell } from 'lucide-react';
+import { format, isToday } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import React from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 
 function OrderRow({ order, onOrderUpdated }: { order: Order, onOrderUpdated: () => void }) {
@@ -135,10 +137,25 @@ function OrderRow({ order, onOrderUpdated }: { order: Order, onOrderUpdated: () 
   )
 }
 
+function StatCard({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) {
+    return (
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{title}</CardTitle>
+                <Icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{value}</div>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function DeliveryOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const fetchOrders = async () => {
     if (user && user.associatedSellerId) {
@@ -153,10 +170,53 @@ export default function DeliveryOrdersPage() {
   };
 
   useEffect(() => {
-    if(user) {
-      fetchOrders();
+    if (user) {
+        fetchOrders();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Real-time listener for new orders
+  useEffect(() => {
+    if (!user?.associatedSellerId) return;
+
+    const q = query(
+        collection(db, 'orders'),
+        where('sellerId', '==', user.associatedSellerId)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        let hasNewOrders = false;
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                const newOrder = { id: change.doc.id, ...change.doc.data() } as Order;
+                // Only toast if it's not an initial load, by checking if the order is already in state
+                if (!orders.some(o => o.id === newOrder.id)) {
+                    hasNewOrders = true;
+                }
+            }
+        });
+
+        if (hasNewOrders) {
+             toast({
+                title: 'New Order!',
+                description: 'A new order has been assigned to you.',
+            });
+            fetchOrders(); // Refetch all orders to get the latest list
+        }
+    });
+
+    return () => unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.associatedSellerId, orders]);
+
+
+  const stats = useMemo(() => {
+    const pending = orders.filter(o => o.status !== 'Delivered').length;
+    const completedToday = orders.filter(o => o.status === 'Delivered' && o.deliveredAt && isToday(o.deliveredAt.toDate())).length;
+    return { pending, completedToday };
+  }, [orders]);
+
 
   return (
     <div className="space-y-6">
@@ -166,6 +226,13 @@ export default function DeliveryOrdersPage() {
           Orders to be delivered for <strong>{user?.associatedSellerName || '...'}</strong>.
         </p>
       </div>
+
+       <div className="grid gap-4 md:grid-cols-3">
+            <StatCard title="Total Assigned" value={orders.length} icon={Package} />
+            <StatCard title="Pending Deliveries" value={stats.pending} icon={Bell} />
+            <StatCard title="Completed Today" value={stats.completedToday} icon={PackageCheck} />
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Recent Orders</CardTitle>
@@ -207,3 +274,5 @@ export default function DeliveryOrdersPage() {
     </div>
   );
 }
+
+    
