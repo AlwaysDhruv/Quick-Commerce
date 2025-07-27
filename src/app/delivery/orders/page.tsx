@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -123,7 +122,7 @@ function OrderRow({ order, onOrderUpdated }: { order: Order, onOrderUpdated: () 
                                     rel="noopener noreferrer"
                                     className="flex items-center text-accent hover:underline"
                                 >
-                                    <MapPin className="mr-2" />
+                                    <MapPin className="mr-2 h-4 w-4" />
                                     View on Map
                                 </a>
                             )}
