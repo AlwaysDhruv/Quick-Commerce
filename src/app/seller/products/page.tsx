@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Image from 'next/image';
 import { type Product } from '@/lib/mock-data';
-import { getProductsBySeller, addProductToFirestore, updateProductInFirestore, deleteProductFromFirestore, deleteMultipleProductsFromFirestore } from '@/lib/firestore';
+import { getProductsBySeller, addProductToFirestore, updateProductInFirestore, deleteProductFromFirestore, deleteMultipleProductsFromFirestore, getCategoriesBySeller, type Category } from '@/lib/firestore';
 import { useAuth } from '@/hooks/use-auth';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -28,14 +28,19 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
-function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
+function ProductDialog({ onProductSuccess, productToEdit }: { onProductSuccess: () => void, productToEdit?: Product }) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
   const { toast } = useToast();
-  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isEditing = !!productToEdit;
+
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
@@ -43,8 +48,26 @@ function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
   const [category, setCategory] = useState('');
   const [image, setImage] = useState('');
   const [dataAiHint, setDataAiHint] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (open) {
+      // Reset form fields when dialog opens
+      setName(productToEdit?.name || '');
+      setDescription(productToEdit?.description || '');
+      setPrice(productToEdit?.price.toString() || '');
+      setStock((productToEdit?.stock ?? 10).toString());
+      setCategory(productToEdit?.category || '');
+      setImage(productToEdit?.image || '');
+      setDataAiHint(productToEdit?.dataAiHint || '');
+
+      // Fetch categories
+      if (user) {
+        getCategoriesBySeller(user.uid)
+          .then(setCategories)
+          .catch(() => toast({ title: 'Could not load categories', variant: 'destructive' }));
+      }
+    }
+  }, [open, productToEdit, user, toast]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -57,80 +80,64 @@ function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
     }
   };
 
-  const handleAddProduct = async () => {
-     if (!name || !price || !category || !stock) {
-      toast({
-        title: 'Missing Information',
-        description: 'Please fill out all required fields.',
-        variant: 'destructive',
-      });
+  const handleSubmit = async () => {
+    if (!name || !price || !category || !stock) {
+      toast({ title: 'Missing Information', description: 'Please fill out all required fields.', variant: 'destructive' });
       return;
     }
-    
     if (!user) {
-        toast({
-            title: 'Authentication Error',
-            description: 'You must be logged in to add a product.',
-            variant: 'destructive',
-        });
-        return;
+      toast({ title: 'Authentication Error', variant: 'destructive' });
+      return;
     }
 
     setIsSaving(true);
+    const productData = {
+      name,
+      description,
+      price: parseFloat(price),
+      stock: parseInt(stock, 10),
+      category,
+      image: image || 'https://placehold.co/400x400.png',
+      dataAiHint,
+    };
+
     try {
-      await addProductToFirestore({
-        name,
-        description,
-        price: parseFloat(price),
-        stock: parseInt(stock, 10),
-        category,
-        image: image || 'https://placehold.co/400x400.png',
-        dataAiHint,
-        sellerId: user.uid,
-      });
-      toast({
-        title: 'Product Added!',
-        description: `${name} has been successfully added.`,
-      });
-      onProductAdded();
+      if (isEditing) {
+        await updateProductInFirestore(productToEdit.id, productData);
+        toast({ title: 'Product Updated!', description: `${name} has been successfully updated.` });
+      } else {
+        await addProductToFirestore({ ...productData, sellerId: user.uid });
+        toast({ title: 'Product Added!', description: `${name} has been successfully added.` });
+      }
+      onProductSuccess();
       setOpen(false);
-      // Reset form
-      setName('');
-      setDescription('');
-      setPrice('');
-      setStock('10');
-      setCategory('');
-      setImage('');
-      setDataAiHint('');
     } catch (error) {
       console.error(error);
-      toast({
-        title: 'Error',
-        description: 'Failed to add product. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: `Failed to ${isEditing ? 'update' : 'add'} product.`, variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
   };
 
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-primary hover:bg-primary/90">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Product
-        </Button>
+        {isEditing ? (
+          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Edit</DropdownMenuItem>
+        ) : (
+          <Button className="bg-primary hover:bg-primary/90">
+            <PlusCircle className="mr-2 h-4 w-4" /> Add Product
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Product</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit Product' : 'Add New Product'}</DialogTitle>
           <DialogDescription>
-            Fill in the details below to add a new product to your store.
+            {isEditing ? `Update the details for ${productToEdit.name}.` : 'Fill in the details to add a product.'}
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">Name</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
@@ -138,6 +145,19 @@ function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">Description</Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="category" className="text-right">Category</Label>
+             <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                    {categories.length > 0 ? categories.map(cat => (
+                        <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                    )) : <SelectItem value="-" disabled>No categories found</SelectItem>}
+                </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="price" className="text-right">Price</Label>
@@ -148,15 +168,10 @@ function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
             <Input id="stock" type="number" value={stock} onChange={(e) => setStock(e.target.value)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="category" className="text-right">Category</Label>
-            <Input id="category" value={category} onChange={(e) => setCategory(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="image" className="text-right">Image</Label>
             <div className="col-span-3 flex items-center gap-2">
                 <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload
+                    <Upload className="mr-2 h-4 w-4" /> Upload
                 </Button>
                 <Input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
                 {image && <Image src={image} alt="preview" width={40} height={40} className="rounded-md object-cover" />}
@@ -168,129 +183,7 @@ function AddProductDialog({ onProductAdded }: { onProductAdded: () => void }) {
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={handleAddProduct} disabled={isSaving}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save product
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function EditProductDialog({ product, onProductUpdated }: { product: Product; onProductUpdated: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [name, setName] = useState(product.name);
-  const [description, setDescription] = useState(product.description);
-  const [price, setPrice] = useState(product.price.toString());
-  const [stock, setStock] = useState((product.stock ?? 0).toString());
-  const [category, setCategory] = useState(product.category);
-  const [image, setImage] = useState(product.image);
-  const [dataAiHint, setDataAiHint] = useState(product.dataAiHint);
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleUpdateProduct = async () => {
-    if (!name || !price || !category || !stock) {
-      toast({
-        title: 'Missing Information',
-        description: 'Please fill out all required fields.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      await updateProductInFirestore(product.id, {
-        name,
-        description,
-        price: parseFloat(price),
-        stock: parseInt(stock, 10),
-        category,
-        image,
-        dataAiHint,
-      });
-      toast({
-        title: 'Product Updated!',
-        description: `${name} has been successfully updated.`,
-      });
-      onProductUpdated();
-      setOpen(false);
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update product. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Edit</DropdownMenuItem>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Edit Product</DialogTitle>
-          <DialogDescription>Update the details for {product.name}.</DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">Name</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="description" className="text-right">Description</Label>
-            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="price" className="text-right">Price</Label>
-            <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="stock" className="text-right">Stock</Label>
-            <Input id="stock" type="number" value={stock} onChange={(e) => setStock(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="category" className="text-right">Category</Label>
-            <Input id="category" value={category} onChange={(e) => setCategory(e.target.value)} className="col-span-3" />
-          </div>
-           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="image" className="text-right">Image</Label>
-            <div className="col-span-3 flex items-center gap-2">
-                <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload
-                </Button>
-                <Input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
-                {image && <Image src={image} alt="preview" width={40} height={40} className="rounded-md object-cover" />}
-            </div>
-          </div>
-           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="dataAiHint" className="text-right">AI Hint</Label>
-            <Input id="dataAiHint" value={dataAiHint} onChange={(e) => setDataAiHint(e.target.value)} className="col-span-3" />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button onClick={handleUpdateProduct} disabled={isSaving}>
+          <Button onClick={handleSubmit} disabled={isSaving}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save changes
           </Button>
@@ -299,6 +192,7 @@ function EditProductDialog({ product, onProductUpdated }: { product: Product; on
     </Dialog>
   );
 }
+
 
 function DeleteProductDialog({ product, onProductDeleted, children }: { product: Product; onProductDeleted: () => void, children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -343,7 +237,7 @@ function DeleteProductDialog({ product, onProductDeleted, children }: { product:
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
-            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isDeleting && <Loader2 className="mr-2 animate-spin" />}
             Yes, delete product
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -444,7 +338,7 @@ export default function ProductsPage() {
                 </AlertDialogContent>
               </AlertDialog>
             )}
-            <AddProductDialog onProductAdded={fetchProducts} />
+            <ProductDialog onProductSuccess={fetchProducts} />
         </div>
       </div>
 
@@ -527,7 +421,7 @@ export default function ProductsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                           <EditProductDialog product={product} onProductUpdated={fetchProducts} />
+                           <ProductDialog onProductSuccess={fetchProducts} productToEdit={product} />
                         </DropdownMenuContent>
                       </DropdownMenu>
                   </TableCell>
@@ -548,3 +442,5 @@ export default function ProductsPage() {
     </div>
   );
 }
+
+    
