@@ -8,12 +8,13 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getOrdersByBuyer, type Order } from '@/lib/firestore';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2, ChevronDown, Search } from 'lucide-react';
+import { Loader2, ChevronDown, Search, MapPin, Store, Truck, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import React from 'react';
 import { Input } from '@/components/ui/input';
+import Link from 'next/link';
 
 function OrderRow({ order }: { order: Order }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -49,42 +50,70 @@ function OrderRow({ order }: { order: Order }) {
         {isOpen && (
           <tr className="bg-muted/50">
             <TableCell colSpan={5} className="p-0">
-               <div className="p-6">
+               <div className="p-6 grid md:grid-cols-2 gap-8">
                  <div className="space-y-3">
+                    <h4 className="font-semibold mb-2">Items</h4>
+                     <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[80px]">Image</TableHead>
+                          <TableHead>Product</TableHead>
+                          <TableHead className="text-center">Quantity</TableHead>
+                          <TableHead className="text-right">Subtotal</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {order.items.map(item => (
+                           <TableRow key={item.product.id}>
+                            <TableCell>
+                               <Image
+                                src={item.product.image}
+                                alt={item.product.name}
+                                width={64}
+                                height={64}
+                                className="rounded-md object-cover"
+                                data-ai-hint={item.product.dataAiHint}
+                              />
+                            </TableCell>
+                            <TableCell>{item.product.name}</TableCell>
+                            <TableCell className="text-center">{item.quantity}</TableCell>
+                            <TableCell className="text-right font-medium">${(item.product.price * item.quantity).toFixed(2)}</TableCell>
+                           </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                 </div>
+                 <div className="space-y-6">
                     <div>
-                        <h4 className="font-semibold mb-2 mt-4">Items</h4>
-                         <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-[80px]">Image</TableHead>
-                              <TableHead>Product</TableHead>
-                              <TableHead className="text-center">Quantity</TableHead>
-                              <TableHead className="text-right">Unit Price</TableHead>
-                              <TableHead className="text-right">Subtotal</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {order.items.map(item => (
-                               <TableRow key={item.product.id}>
-                                <TableCell>
-                                   <Image
-                                    src={item.product.image}
-                                    alt={item.product.name}
-                                    width={64}
-                                    height={64}
-                                    className="rounded-md object-cover"
-                                    data-ai-hint={item.product.dataAiHint}
-                                  />
-                                </TableCell>
-                                <TableCell>{item.product.name}</TableCell>
-                                <TableCell className="text-center">{item.quantity}</TableCell>
-                                <TableCell className="text-right">${item.product.price.toFixed(2)}</TableCell>
-                                <TableCell className="text-right font-medium">${(item.product.price * item.quantity).toFixed(2)}</TableCell>
-                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                        <h4 className="font-semibold mb-2">Shipping To</h4>
+                        <div className="text-sm text-muted-foreground p-4 border rounded-md bg-background/50 space-y-2">
+                            <p className="font-bold text-foreground">{order.address.fullName}</p>
+                            <p>{order.address.streetAddress}</p>
+                            <p>{order.address.city}, {order.address.district} - {order.address.pincode}</p>
+                            <p>{order.address.country}</p>
+                        </div>
                     </div>
+                     <div>
+                        <h4 className="font-semibold mb-2">Sold By</h4>
+                        <div className="text-sm text-muted-foreground p-4 border rounded-md bg-background/50 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Store className="h-4 w-4" />
+                                <span className="font-bold text-foreground">{order.items[0]?.product.sellerName || '...'}</span>
+                            </div>
+                            <Button asChild variant="link" size="sm" className="text-accent h-auto p-0">
+                                <Link href={`/buyer/seller/${order.sellerId}`}>View Store <ArrowRight className="ml-1" /></Link>
+                            </Button>
+                        </div>
+                    </div>
+                    {order.deliveryPersonName && (
+                         <div>
+                            <h4 className="font-semibold mb-2">Delivered By</h4>
+                             <div className="text-sm text-muted-foreground p-4 border rounded-md bg-background/50 flex items-center gap-2">
+                                <Truck className="h-4 w-4" />
+                                <span className="font-bold text-foreground">{order.deliveryPersonName}</span>
+                             </div>
+                        </div>
+                    )}
                  </div>
               </div>
             </TableCell>
@@ -105,8 +134,22 @@ export default function BuyerOrdersPage() {
       if (user) {
         setIsLoading(true);
         const fetchedOrders = await getOrdersByBuyer(user.uid);
-        fetchedOrders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-        setOrders(fetchedOrders);
+        
+        // Enrich products with sellerName before setting state
+        const enrichedOrders = fetchedOrders.map(order => ({
+            ...order,
+            items: order.items.map(item => ({
+                ...item,
+                product: {
+                    ...item.product,
+                    // Assume all items in an order are from the same seller for sellerName
+                    sellerName: order.items[0]?.product.sellerName || 'N/A' 
+                }
+            }))
+        }));
+
+        enrichedOrders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+        setOrders(enrichedOrders);
         setIsLoading(false);
       }
     };
