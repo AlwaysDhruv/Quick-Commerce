@@ -194,6 +194,17 @@ export const getProductsBySeller = async (sellerId: string): Promise<Product[]> 
 
 
 // --- ORDER ---
+export type Address = {
+  fullName: string;
+  phone: string;
+  streetAddress: string;
+  city: string;
+  district: string;
+  country: string;
+  pincode: string;
+  latitude?: number;
+  longitude?: number;
+};
 
 export type Order = {
   id: string;
@@ -207,6 +218,7 @@ export type Order = {
   sellerId: string;
   deliveryPersonId?: string | null;
   deliveryPersonName?: string | null;
+  address: Address;
 };
 
 export const addOrderToFirestore = async (orderData: Omit<Order, 'id'>) => {

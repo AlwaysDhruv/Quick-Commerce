@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -6,9 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { getOrdersBySeller, updateOrderStatus, type Order } from '@/lib/firestore';
+import { getOrdersByDeliveryPerson, updateOrderStatus, type Order } from '@/lib/firestore';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2, ChevronDown, CheckCircle, PackageCheck, Package, Bell } from 'lucide-react';
+import { Loader2, ChevronDown, CheckCircle, PackageCheck, Package, Bell, MapPin } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
@@ -75,52 +76,58 @@ function OrderRow({ order, onOrderUpdated }: { order: Order, onOrderUpdated: () 
         {isOpen && (
           <tr className="bg-muted/50">
             <TableCell colSpan={5} className="p-0">
-               <div className="p-6">
+               <div className="p-6 grid md:grid-cols-2 gap-6">
                  <div className="space-y-3">
-                    <div>
-                        <h4 className="font-semibold mb-2">Order Details</h4>
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Order ID</span>
-                                <span className="font-mono text-foreground">{order.id}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Order Date</span>
-                                <span className="text-foreground">{format(order.createdAt.toDate(), 'PPpp')}</span>
-                            </div>
-                        </div>
+                    <h4 className="font-semibold mb-2">Items</h4>
+                     <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[80px]">Image</TableHead>
+                          <TableHead>Product</TableHead>
+                          <TableHead className="text-center">Quantity</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {order.items.map(item => (
+                           <TableRow key={item.product.id}>
+                            <TableCell>
+                               <Image
+                                src={item.product.image}
+                                alt={item.product.name}
+                                width={64}
+                                height={64}
+                                className="rounded-md object-cover"
+                                data-ai-hint={item.product.dataAiHint}
+                              />
+                            </TableCell>
+                            <TableCell>{item.product.name}</TableCell>
+                            <TableCell className="text-center">{item.quantity}</TableCell>
+                           </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                 </div>
+                 <div className="space-y-3">
+                     <h4 className="font-semibold mb-2">Shipping Address</h4>
+                    <div className="text-sm text-muted-foreground p-4 border rounded-md bg-background/50 space-y-2">
+                        <p className="font-bold text-foreground">{order.address.fullName}</p>
+                        <p>{order.address.phone}</p>
+                        <p>{order.address.streetAddress}</p>
+                        <p>{order.address.city}, {order.address.district} - {order.address.pincode}</p>
+                        <p>{order.address.country}</p>
+                         {order.address.latitude && order.address.longitude && (
+                            <a 
+                                href={`https://www.google.com/maps/search/?api=1&query=${order.address.latitude},${order.address.longitude}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center text-accent hover:underline"
+                            >
+                                <MapPin className="mr-2" />
+                                View on Map
+                            </a>
+                         )}
                     </div>
-                    <div>
-                        <h4 className="font-semibold mb-2 mt-4">Items</h4>
-                         <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-[80px]">Image</TableHead>
-                              <TableHead>Product</TableHead>
-                              <TableHead className="text-center">Quantity</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {order.items.map(item => (
-                               <TableRow key={item.product.id}>
-                                <TableCell>
-                                   <Image
-                                    src={item.product.image}
-                                    alt={item.product.name}
-                                    width={64}
-                                    height={64}
-                                    className="rounded-md object-cover"
-                                    data-ai-hint={item.product.dataAiHint}
-                                  />
-                                </TableCell>
-                                <TableCell>{item.product.name}</TableCell>
-                                <TableCell className="text-center">{item.quantity}</TableCell>
-                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                    </div>
-                    <div className="flex justify-end pt-4">
+                     <div className="flex justify-end pt-4">
                         {order.status !== 'Delivered' && (
                              <Button onClick={() => handleStatusUpdate('Delivered')} disabled={isUpdating}>
                                 {isUpdating ? <Loader2 className="mr-2 animate-spin" /> : <CheckCircle className="mr-2" /> }
@@ -160,7 +167,7 @@ export default function DeliveryOrdersPage() {
   const fetchOrders = async () => {
     if (user && user.associatedSellerId) {
       setIsLoading(true);
-      const fetchedOrders = await getOrdersBySeller(user.associatedSellerId);
+      const fetchedOrders = await getOrdersByDeliveryPerson(user.uid);
       fetchedOrders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
       setOrders(fetchedOrders);
       setIsLoading(false);
@@ -274,5 +281,3 @@ export default function DeliveryOrdersPage() {
     </div>
   );
 }
-
-    

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getOrdersBySeller, updateOrderStatus, deleteOrderFromFirestore, type Order } from '@/lib/firestore';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2, MoreHorizontal, Trash2, ChevronDown, CheckCircle, Truck } from 'lucide-react';
+import { Loader2, MoreHorizontal, Trash2, ChevronDown, CheckCircle, Truck, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
@@ -161,7 +162,7 @@ function OrderRow({ order, onOrderUpdated }: { order: Order; onOrderUpdated: () 
                         </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                 </DropdownMenuSub>
-                <DeleteOrderDialog order={order} onOrderDeleted={onOrderUpdated}>
+                <DeleteOrderDialog order={order} onOrderUpdated={onOrderUpdated}>
                     <DropdownMenuItem
                       className="text-destructive"
                       onSelect={(e) => {e.preventDefault()}}
@@ -180,29 +181,8 @@ function OrderRow({ order, onOrderUpdated }: { order: Order; onOrderUpdated: () 
         {isOpen && (
           <tr className="bg-muted/50">
             <TableCell colSpan={7} className="p-0">
-               <div className="p-6">
+               <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div className="space-y-3">
-                    <div>
-                        <h4 className="font-semibold mb-2">Order Details</h4>
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Order ID</span>
-                                <span className="font-mono text-foreground">{order.id}</span>
-                            </div>
-                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Order Total</span>
-                                <span className="font-bold text-foreground">${order.total.toFixed(2)}</span>
-                            </div>
-                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Buyer ID</span>
-                                <span className="font-mono text-foreground">{order.buyerId}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Order Date</span>
-                                <span className="text-foreground">{format(order.createdAt.toDate(), 'PPpp')}</span>
-                            </div>
-                        </div>
-                    </div>
                     <div>
                         <h4 className="font-semibold mb-2 mt-4">Items</h4>
                          <Table>
@@ -238,6 +218,27 @@ function OrderRow({ order, onOrderUpdated }: { order: Order; onOrderUpdated: () 
                         </Table>
                     </div>
                  </div>
+                 <div className="space-y-3">
+                    <h4 className="font-semibold mb-2 mt-4">Shipping Address</h4>
+                    <div className="text-sm text-muted-foreground p-4 border rounded-md bg-background/50 space-y-2">
+                        <p className="font-bold text-foreground">{order.address.fullName}</p>
+                        <p>{order.address.phone}</p>
+                        <p>{order.address.streetAddress}</p>
+                        <p>{order.address.city}, {order.address.district} - {order.address.pincode}</p>
+                        <p>{order.address.country}</p>
+                         {order.address.latitude && order.address.longitude && (
+                            <a 
+                                href={`https://www.google.com/maps/search/?api=1&query=${order.address.latitude},${order.address.longitude}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center text-accent hover:underline"
+                            >
+                                <MapPin className="mr-2" />
+                                View on Map
+                            </a>
+                         )}
+                    </div>
+                 </div>
               </div>
             </TableCell>
           </tr>
@@ -266,6 +267,7 @@ export default function OrdersPage() {
     if(user) {
       fetchOrders();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   return (

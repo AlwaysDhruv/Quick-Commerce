@@ -7,18 +7,133 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
-import { Trash2 } from 'lucide-react';
+import { Trash2, MapPin, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { addOrderToFirestore, getProductsFromFirestore } from '@/lib/firestore';
+import { addOrderToFirestore, getProductsFromFirestore, type Address } from '@/lib/firestore';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { Label } from '@/components/ui/label';
+
+function ShippingAddressForm({ onConfirm, onCancel, user }: { onConfirm: (address: Address) => void, onCancel: () => void, user: any }) {
+  const [fullName, setFullName] = useState(user?.name || '');
+  const [phone, setPhone] = useState('');
+  const [streetAddress, setStreetAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [district, setDistrict] = useState('');
+  const [country, setCountry] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [latitude, setLatitude] = useState<number | undefined>();
+  const [longitude, setLongitude] = useState<number | undefined>();
+  const [isLocating, setIsLocating] = useState(false);
+  const { toast } = useToast();
+
+  const handleGetLocation = () => {
+    if (navigator.geolocation) {
+      setIsLocating(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLatitude(position.coords.latitude);
+          setLongitude(position.coords.longitude);
+          toast({ title: "Location captured!" });
+          setIsLocating(false);
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          toast({ title: "Could not get location", description: "Please ensure location services are enabled.", variant: "destructive" });
+          setIsLocating(false);
+        }
+      );
+    } else {
+      toast({ title: "Geolocation not supported", description: "Your browser does not support geolocation.", variant: "destructive" });
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!fullName || !phone || !streetAddress || !city || !district || !country || !pincode) {
+        toast({ title: "All fields are required", description: "Please fill in all address details.", variant: "destructive"});
+        return;
+    }
+    onConfirm({
+      fullName,
+      phone,
+      streetAddress,
+      city,
+      district,
+      country,
+      pincode,
+      latitude,
+      longitude,
+    });
+  };
+
+  return (
+    <div className="mt-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>Shipping Details</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="fullName">Full Name</Label>
+                    <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                </div>
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="streetAddress">Street Address</Label>
+                <Input id="streetAddress" value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="district">District</Label>
+                    <Input id="district" value={district} onChange={(e) => setDistrict(e.target.value)} />
+                </div>
+            </div>
+             <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Input id="country" value={country} onChange={(e) => setCountry(e.target.value)} />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="pincode">Pincode</Label>
+                    <Input id="pincode" value={pincode} onChange={(e) => setPincode(e.target.value)} />
+                </div>
+            </div>
+             <div className="flex items-center gap-4">
+                 <Button variant="outline" onClick={handleGetLocation} disabled={isLocating}>
+                    {isLocating ? <Loader2 className="mr-2 animate-spin" /> : <MapPin className="mr-2" />}
+                    Use My Location
+                </Button>
+                {latitude && longitude && <span className="text-sm text-green-500">Location captured!</span>}
+            </div>
+
+        </CardContent>
+        <CardFooter className="flex justify-end gap-4">
+          <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+          <Button onClick={handleSubmit}>Confirm Order</Button>
+        </CardFooter>
+      </Card>
+    </div>
+  )
+}
+
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, cartTotal, cartCount, clearCart } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   const handleUpdateQuantity = (productId: string, quantity: number) => {
     const result = updateQuantity(productId, quantity);
@@ -32,8 +147,8 @@ export default function CartPage() {
     }
   };
 
-  const handleCheckout = async () => {
-    if (!user) {
+  const handleInitiateCheckout = () => {
+     if (!user) {
       toast({
         title: 'Not Logged In',
         description: 'You must be logged in to check out.',
@@ -42,8 +157,12 @@ export default function CartPage() {
       router.push('/login');
       return;
     }
-
     if (cart.length === 0) return;
+    setIsCheckingOut(true);
+  }
+
+  const handlePlaceOrder = async (address: Address) => {
+    if (!user) return;
     
     // For this example, we'll assume all items in the cart are from the same seller.
     const sellerId = cart[0].product.sellerId;
@@ -68,8 +187,7 @@ export default function CartPage() {
       }
 
       if (stockError) {
-        // Optionally, you could implement logic to auto-update the cart here.
-        // For now, we'll just stop the checkout.
+        setIsCheckingOut(false);
         return;
       }
       // --- End Stock Verification ---
@@ -83,6 +201,7 @@ export default function CartPage() {
         status: 'Processing',
         sellerId: sellerId,
         createdAt: new Date() as any, // Firestore will convert this to Timestamp
+        address,
       });
       
       toast({
@@ -91,7 +210,7 @@ export default function CartPage() {
       });
       
       clearCart();
-      router.push('/buyer');
+      router.push('/buyer/orders');
 
     } catch (error) {
       console.error("Checkout error:", error);
@@ -100,6 +219,8 @@ export default function CartPage() {
         description: 'There was an issue placing your order. Please try again.',
         variant: 'destructive',
       });
+    } finally {
+        setIsCheckingOut(false);
     }
   }
 
@@ -108,7 +229,7 @@ export default function CartPage() {
       <div className="container flex min-h-[calc(100vh-12rem)] flex-col items-center justify-center text-center">
         <h1 className="text-3xl font-bold">Your Cart is Empty</h1>
         <p className="mt-2 text-muted-foreground">Looks like you haven't added anything to your cart yet.</p>
-        <Button asChild className="bg-primary hover:bg-primary/90">
+        <Button asChild className="mt-4 bg-primary hover:bg-primary/90">
           <Link href="/buyer">Start Shopping</Link>
         </Button>
       </div>
@@ -155,11 +276,12 @@ export default function CartPage() {
                           value={quantity}
                           onChange={(e) => handleUpdateQuantity(product.id, parseInt(e.target.value, 10))}
                           className="w-20 mx-auto text-center"
+                          disabled={isCheckingOut}
                         />
                       </TableCell>
                       <TableCell className="text-right">${(product.price * quantity).toFixed(2)}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => removeFromCart(product.id)}>
+                        <Button variant="ghost" size="icon" onClick={() => removeFromCart(product.id)} disabled={isCheckingOut}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -190,11 +312,20 @@ export default function CartPage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleCheckout} className="w-full bg-primary hover:bg-primary/90">Proceed to Checkout</Button>
+              <Button onClick={handleInitiateCheckout} className="w-full bg-primary hover:bg-primary/90" disabled={isCheckingOut}>
+                Proceed to Checkout
+              </Button>
             </CardFooter>
           </Card>
         </div>
       </div>
+      {isCheckingOut && (
+        <ShippingAddressForm
+          onConfirm={handlePlaceOrder}
+          onCancel={() => setIsCheckingOut(false)}
+          user={user}
+        />
+      )}
     </div>
   );
 }
