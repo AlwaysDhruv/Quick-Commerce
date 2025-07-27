@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(userData);
            // Redirect on initial load if user is already logged in
           if (['/login', '/register', '/'].includes(window.location.pathname)) {
-            let redirectPath = '/buyer/profile'; // Default redirect for buyer
+            let redirectPath = '/buyer'; // Default redirect for buyer
             if (firestoreUser.role === 'seller') {
               redirectPath = '/seller';
             } else if (firestoreUser.role === 'delivery') {
@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, pass);
     const firestoreUser = await getUserFromFirestore(userCredential.user.uid);
     if (firestoreUser) {
-        let redirectPath = '/buyer/profile';
+        let redirectPath = '/buyer';
         if (firestoreUser.role === 'seller') {
             redirectPath = '/seller';
         } else if (firestoreUser.role === 'delivery') {
@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await addUserToFirestore(userCredential.user.uid, name, email, role);
     const firestoreUser = await getUserFromFirestore(userCredential.user.uid);
      if (firestoreUser) {
-        let redirectPath = '/buyer/profile';
+        let redirectPath = '/buyer';
         if (firestoreUser.role === 'seller') {
             redirectPath = '/seller';
         } else if (firestoreUser.role === 'delivery') {

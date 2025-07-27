@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { ProductCard } from '@/components/product-card';
 import { type Product } from '@/lib/mock-data';
 import { useAuth } from '@/hooks/use-auth';
@@ -24,6 +24,8 @@ import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Autoplay from "embla-carousel-autoplay"
+
 
 function CategoryCards({ categories }: { categories: Category[] }) {
     const router = useRouter();
@@ -165,6 +167,10 @@ export default function BuyerPage() {
 
   const showFilters = useMemo(() => filters.searchQuery.length > 0 || filters.categories.length > 0, [filters]);
 
+   const plugin = useRef(
+    Autoplay({ delay: 4000, stopOnInteraction: true })
+  )
+
   useEffect(() => {
     const fetchProductsAndCategories = async () => {
       setIsLoading(true);
@@ -269,7 +275,13 @@ export default function BuyerPage() {
   return (
     <div className="space-y-8">
         <section>
-            <Carousel className="w-full" opts={{ loop: true }}>
+            <Carousel 
+                className="w-full" 
+                opts={{ loop: true }}
+                plugins={[plugin.current]}
+                onMouseEnter={plugin.current.stop}
+                onMouseLeave={plugin.current.reset}
+            >
               <CarouselContent>
                 <CarouselItem>
                   <div className="relative h-[50vh] md:h-[70vh] w-full">
@@ -291,6 +303,42 @@ export default function BuyerPage() {
                         <p className="mt-4 text-lg">Find the latest gadgets and electronics.</p>
                          <Button asChild size="lg" className="mt-6">
                             <Link href="/buyer?category=Electronics">Explore Tech</Link>
+                        </Button>
+                    </div>
+                  </div>
+                </CarouselItem>
+                <CarouselItem>
+                  <div className="relative h-[50vh] md:h-[70vh] w-full">
+                    <Image src="https://placehold.co/1600x900.png" alt="Slide 3" fill className="object-cover" data-ai-hint="home decor"/>
+                     <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center text-white p-4">
+                        <h2 className="text-4xl md:text-6xl font-headline font-bold">Beautify Your Home</h2>
+                        <p className="mt-4 text-lg">Discover unique pieces for every room.</p>
+                         <Button asChild size="lg" className="mt-6">
+                            <Link href="/buyer?category=Home Goods">Shop Home</Link>
+                        </Button>
+                    </div>
+                  </div>
+                </CarouselItem>
+                <CarouselItem>
+                  <div className="relative h-[50vh] md:h-[70vh] w-full">
+                    <Image src="https://placehold.co/1600x900.png" alt="Slide 4" fill className="object-cover" data-ai-hint="outdoor adventure"/>
+                     <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center text-white p-4">
+                        <h2 className="text-4xl md:text-6xl font-headline font-bold">Adventure Awaits</h2>
+                        <p className="mt-4 text-lg">Get equipped for your next outdoor journey.</p>
+                         <Button asChild size="lg" className="mt-6">
+                            <Link href="/buyer?category=Sports & Outdoors">Get Outside</Link>
+                        </Button>
+                    </div>
+                  </div>
+                </CarouselItem>
+                <CarouselItem>
+                  <div className="relative h-[50vh] md:h-[70vh] w-full">
+                    <Image src="https://placehold.co/1600x900.png" alt="Slide 5" fill className="object-cover" data-ai-hint="gourmet food"/>
+                     <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center text-white p-4">
+                        <h2 className="text-4xl md:text-6xl font-headline font-bold">Taste The Difference</h2>
+                        <p className="mt-4 text-lg">Explore gourmet foods and pantry staples.</p>
+                         <Button asChild size="lg" className="mt-6">
+                            <Link href="/buyer?category=Food & Grocery">Shop Gourmet</Link>
                         </Button>
                     </div>
                   </div>
