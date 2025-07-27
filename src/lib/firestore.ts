@@ -1,7 +1,3 @@
-
-
-
-
 import { doc, getDoc, setDoc, addDoc, collection, getDocs, query, where, Timestamp, updateDoc, deleteDoc, writeBatch, runTransaction } from 'firebase/firestore';
 import { db } from './firebase';
 import type { User } from '@/hooks/use-auth';
@@ -323,7 +319,7 @@ export const deleteOrderFromFirestore = async (orderId: string) => {
 export const updateOrderStatus = async (
   orderId: string, 
   status: Order['status'],
-  deliveryPerson?: { id: string; name: string } | null
+  deliveryPerson: { id: string; name: string } | null
 ) => {
   try {
     const orderRef = doc(db, 'orders', orderId);

@@ -83,7 +83,16 @@ function OrderRow({ order, onOrderUpdated, deliveryTeam }: { order: Order; onOrd
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleStatusUpdate = async (status: Order['status'], deliveryPerson?: { id: string, name: string }) => {
+  const handleStatusUpdate = async (status: Order['status'], deliveryPerson: { id: string, name: string } | null) => {
+    if (status === 'Shipped' && !deliveryPerson) {
+         toast({
+            title: 'Assignment Required',
+            description: 'Please assign a delivery person to ship an order.',
+            variant: 'destructive',
+        });
+        return;
+    }
+
     setIsUpdating(true);
     try {
       await updateOrderStatus(order.id, status, deliveryPerson);
@@ -162,7 +171,7 @@ function OrderRow({ order, onOrderUpdated, deliveryTeam }: { order: Order; onOrd
                                  </DropdownMenuSubContent>
                                </DropdownMenuPortal>
                              </DropdownMenuSub>
-                             <DropdownMenuItem onClick={() => handleStatusUpdate('Delivered')} disabled={isUpdating}>
+                             <DropdownMenuItem onClick={() => handleStatusUpdate('Delivered', order.deliveryPersonId ? {id: order.deliveryPersonId, name: order.deliveryPersonName!} : null)} disabled={isUpdating}>
                                 Mark as Delivered
                             </DropdownMenuItem>
                         </DropdownMenuSubContent>
