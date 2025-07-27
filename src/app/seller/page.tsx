@@ -4,7 +4,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
-import { getOrdersBySeller, getProductsBySeller, getBuyerCountFromFirestore, type Order } from '@/lib/firestore';
+import { getOrdersBySeller, getProductsBySeller, getUniqueBuyerCountForSeller, type Order } from '@/lib/firestore';
 import { DollarSign, Package, ShoppingCart, Users, Loader2, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -92,7 +92,7 @@ export default function SellerDashboard() {
         const [products, fetchedOrders, buyers] = await Promise.all([
           getProductsBySeller(user.uid),
           getOrdersBySeller(user.uid),
-          getBuyerCountFromFirestore(),
+          getUniqueBuyerCountForSeller(user.uid),
         ]);
 
         setProductCount(products.length);
@@ -145,7 +145,7 @@ export default function SellerDashboard() {
         {renderStatCard('Total Revenue', totalRevenue !== null ? `$${totalRevenue.toLocaleString()}` : 'N/A', <DollarSign className="h-4 w-4 text-muted-foreground" />)}
         {renderStatCard('Orders', orders ? `+${orders.length}` : 'N/A', <ShoppingCart className="h-4 w-4 text-muted-foreground" />)}
         {renderStatCard('Products', productCount !== null ? productCount : 'N/A', <Package className="h-4 w-4 text-muted-foreground" />, 'Total products listed')}
-        {renderStatCard('Total Buyers', buyerCount !== null ? buyerCount : 'N/A', <Users className="h-4 w-4 text-muted-foreground" />, 'Total registered buyers')}
+        {renderStatCard('Total Buyers', buyerCount !== null ? buyerCount : 'N/A', <Users className="h-4 w-4 text-muted-foreground" />, 'Customers who bought from you')}
       </div>
 
       <div>
