@@ -177,11 +177,11 @@ export default function DeliveryOrdersPage() {
 
   const fetchOrders = async () => {
     if (user?.uid) {
-      setIsLoading(true);
+      // Don't set loading to true here to avoid flickering on real-time updates
       const fetchedOrders = await getOrdersByDeliveryPerson(user.uid);
       fetchedOrders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
       setOrders(fetchedOrders);
-      setIsLoading(false);
+      setIsLoading(false); // Set loading to false after the first fetch
     } else {
         setIsLoading(false);
     }
@@ -189,12 +189,13 @@ export default function DeliveryOrdersPage() {
 
   useEffect(() => {
     if (user) {
+        setIsLoading(true); // Set loading true only on initial component mount with user
         fetchOrders();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Real-time listener for new orders
+  // Real-time listener for new/updated orders
   useEffect(() => {
     if (!user?.uid) return;
 
@@ -204,28 +205,35 @@ export default function DeliveryOrdersPage() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-        let hasNewData = false;
-        snapshot.docChanges().forEach((change) => {
-            if (change.type === "added" || change.type === 'modified') {
-                const changedOrder = { id: change.doc.id, ...change.doc.data() } as Order;
-                if (!orders.some(o => o.id === changedOrder.id && o.status === changedOrder.status)) {
-                    hasNewData = true;
-                }
-            }
-        });
+        const initialLoad = isLoading;
+        let newAssignments = false;
 
-        if (hasNewData) {
-             toast({
-                title: 'Orders Updated!',
-                description: 'Your order list has been updated.',
-            });
-            fetchOrders(); // Refetch all orders to get the latest list
+        snapshot.docChanges().forEach((change) => {
+             const changedOrder = { id: change.doc.id, ...change.doc.data() } as Order;
+             // Check for new assignments specifically
+             if (change.type === "added" && !orders.some(o => o.id === changedOrder.id)) {
+                 newAssignments = true;
+             }
+        });
+        
+        // Refetch the full list if there are any changes
+        // This is simpler and more reliable than trying to merge changes manually
+        if (!snapshot.metadata.hasPendingWrites) {
+            fetchOrders();
+
+            // Show toast only for new assignments after the initial data load
+            if (!initialLoad && newAssignments) {
+                toast({
+                    title: 'New Order Assigned!',
+                    description: 'You have a new order to deliver.',
+                });
+            }
         }
     });
 
     return () => unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid, orders]);
+  }, [user?.uid, isLoading]); // Re-run when user or initial loading state changes
 
 
   const stats = useMemo(() => {
@@ -291,3 +299,5 @@ export default function DeliveryOrdersPage() {
     </div>
   );
 }
+
+    
