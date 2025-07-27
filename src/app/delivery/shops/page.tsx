@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { getAllSellers, createDeliveryRequest, getDeliveryRequestsForDeliveryPerson, type DeliveryRequest } from '@/lib/firestore';
+import { getAllSellers, createDeliveryRequest, getDeliveryRequestsForDeliveryPerson, getLeaveRequestsForSeller, type DeliveryRequest, type LeaveRequest } from '@/lib/firestore';
 import { useAuth, type User } from '@/hooks/use-auth';
 import { Loader2, CheckCircle, Send, XCircle } from 'lucide-react';
 
@@ -13,7 +13,8 @@ export default function FindShopsPage() {
   const [sellers, setSellers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState<string | null>(null);
-  const [requests, setRequests] = useState<DeliveryRequest[]>([]);
+  const [deliveryRequests, setDeliveryRequests] = useState<DeliveryRequest[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -21,12 +22,14 @@ export default function FindShopsPage() {
     setIsLoading(true);
     if (!user) return;
     try {
-      const [allSellers, sentRequests] = await Promise.all([
+      const [allSellers, sentDeliveryRequests, sentLeaveRequests] = await Promise.all([
         getAllSellers(),
         getDeliveryRequestsForDeliveryPerson(user.uid),
+        getLeaveRequestsForSeller(user.uid),
       ]);
       setSellers(allSellers);
-      setRequests(sentRequests);
+      setDeliveryRequests(sentDeliveryRequests);
+      setLeaveRequests(sentLeaveRequests);
     } catch (error) {
       console.error(error);
       toast({
@@ -40,8 +43,6 @@ export default function FindShopsPage() {
   };
 
   useEffect(() => {
-    // This check is now also performed on the main return
-    // So this useEffect is mostly for initial data fetch
     if (user) {
       fetchData();
     }
@@ -64,7 +65,7 @@ export default function FindShopsPage() {
       });
       // Refetch requests to update UI state
       const sentRequests = await getDeliveryRequestsForDeliveryPerson(user.uid);
-      setRequests(sentRequests);
+      setDeliveryRequests(sentRequests);
     } catch (error) {
       console.error(error);
       toast({
@@ -78,18 +79,24 @@ export default function FindShopsPage() {
   };
 
   const getRequestStatusForSeller = (sellerId: string) => {
-    // Find the most recent request for this seller by date
-    const sellerRequests = requests
-      .filter(r => r.sellerId === sellerId)
-      .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+      const lastDeliveryRequest = deliveryRequests
+        .filter(r => r.sellerId === sellerId)
+        .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())[0];
 
-    if (sellerRequests.length > 0) {
-        // The status is determined by the most recent request record
-        return sellerRequests[0].status;
-    }
-    
-    // No request has ever been sent to this seller
-    return null;
+      const lastLeaveRequest = leaveRequests
+        .filter(r => r.sellerId === sellerId)
+        .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())[0];
+      
+      if (!lastDeliveryRequest) {
+        return null; // No request ever sent
+      }
+
+      // If a leave request is more recent than a join request, it means the user has left.
+      if (lastLeaveRequest && lastLeaveRequest.createdAt.toMillis() > lastDeliveryRequest.createdAt.toMillis()) {
+         return 'left';
+      }
+
+      return lastDeliveryRequest.status;
   };
 
   if (isLoading) {
