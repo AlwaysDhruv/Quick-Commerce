@@ -11,7 +11,7 @@ import { getOrdersBySeller, updateOrderStatus, deleteOrderFromFirestore, type Or
 import { useAuth, type User } from '@/hooks/use-auth';
 import { Loader2, MoreHorizontal, Trash2, ChevronDown, CheckCircle, Truck, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -78,24 +78,15 @@ function DeleteOrderDialog({ order, onOrderDeleted, children }: { order: Order; 
   )
 }
 
-function OrderRow({ order, onOrderUpdated, deliveryTeam }: { order: Order; onOrderUpdated: () => void, deliveryTeam: User[] }) {
+function OrderRow({ order, onOrderUpdated }: { order: Order; onOrderUpdated: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleStatusUpdate = async (status: Order['status'], deliveryPerson?: { id: string, name: string }) => {
-    if (status === 'Shipped' && !deliveryPerson) {
-         toast({
-            title: 'Assignment Required',
-            description: 'Please assign a delivery person to ship an order.',
-            variant: 'destructive',
-        });
-        return;
-    }
-
+  const handleStatusUpdate = async (status: Order['status']) => {
     setIsUpdating(true);
     try {
-      await updateOrderStatus(order.id, status, deliveryPerson);
+      await updateOrderStatus(order.id, status);
       toast({
         title: 'Order Status Updated',
         description: `Order ...${order.id.slice(-6)} is now ${status}.`
@@ -153,25 +144,6 @@ function OrderRow({ order, onOrderUpdated, deliveryTeam }: { order: Order; onOrd
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                 {order.status === 'Processing' && (
-                     <DropdownMenuSub>
-                        <DropdownMenuSubTrigger>
-                            <Truck className="mr-2" />
-                            Assign & Ship
-                        </DropdownMenuSubTrigger>
-                        <DropdownMenuPortal>
-                            <DropdownMenuSubContent>
-                                <DropdownMenuLabel>Select Delivery Person</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                {deliveryTeam.length > 0 ? deliveryTeam.map(person => (
-                                    <DropdownMenuItem key={person.uid} onClick={() => handleStatusUpdate('Shipped', { id: person.uid, name: person.name })}>
-                                        {person.name}
-                                    </DropdownMenuItem>
-                                )) : <DropdownMenuItem disabled>No delivery staff found</DropdownMenuItem>}
-                            </DropdownMenuSubContent>
-                        </DropdownMenuPortal>
-                     </DropdownMenuSub>
-                 )}
                  {(order.status === 'Shipped' || order.status === 'Out for Delivery') && (
                      <DropdownMenuItem onClick={() => handleStatusUpdate(order.status === 'Shipped' ? 'Out for Delivery' : 'Delivered')}>
                         {order.status === 'Shipped' ? <Truck className="mr-2" /> : <CheckCircle className="mr-2" />}
@@ -274,20 +246,15 @@ function OrderRow({ order, onOrderUpdated, deliveryTeam }: { order: Order; onOrd
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [deliveryTeam, setDeliveryTeam] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
   const fetchData = async () => {
     if (user) {
       setIsLoading(true);
-      const [fetchedOrders, fetchedTeam] = await Promise.all([
-        getOrdersBySeller(user.uid),
-        getDeliveryTeamForSeller(user.uid)
-      ]);
+      const fetchedOrders = await getOrdersBySeller(user.uid);
       fetchedOrders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
       setOrders(fetchedOrders);
-      setDeliveryTeam(fetchedTeam);
       setIsLoading(false);
     }
   };
@@ -342,7 +309,7 @@ export default function OrdersPage() {
                 </TableRow>
               ) : (
                 orders.map((order) => (
-                  <OrderRow key={order.id} order={order} onOrderUpdated={fetchData} deliveryTeam={deliveryTeam} />
+                  <OrderRow key={order.id} order={order} onOrderUpdated={fetchData} />
                 ))
               )}
             </TableBody>

@@ -1,4 +1,5 @@
 
+
 import { doc, getDoc, setDoc, addDoc, collection, getDocs, query, where, Timestamp, updateDoc, deleteDoc, writeBatch, runTransaction } from 'firebase/firestore';
 import { db } from './firebase';
 import type { User } from '@/hooks/use-auth';
@@ -13,7 +14,6 @@ export const addUserToFirestore = async (userId: string, name: string, email: st
       name,
       email,
       role,
-      phone: phone || null,
     };
     if (role === 'delivery') {
       userData.associatedSellerId = null;
@@ -49,14 +49,12 @@ export const getUserFromFirestore = async (userId: string): Promise<User | null>
 export const updateUserAddress = async (userId: string, address: Address) => {
     try {
         const userRef = doc(db, 'users', userId);
-        // Create a new object to avoid mutating the original address object.
-        const addressToSave = { ...address };
+        const addressToSave: Partial<Address> = {};
 
-        // Remove properties that are undefined, as Firestore doesn't support them.
-        Object.keys(addressToSave).forEach(key => {
-            const typedKey = key as keyof Address;
-            if (addressToSave[typedKey] === undefined) {
-                delete addressToSave[typedKey];
+        // Create a new object with only defined properties to avoid Firestore errors
+        (Object.keys(address) as Array<keyof Address>).forEach(key => {
+            if (address[key] !== undefined) {
+                addressToSave[key] = address[key];
             }
         });
 
@@ -87,17 +85,6 @@ export const getUsersCountFromFirestore = async (): Promise<number> => {
     return querySnapshot.size;
   } catch (error) {
     console.error('Error getting users count from Firestore: ', error);
-    throw error;
-  }
-}
-
-export const getBuyerCountFromFirestore = async (): Promise<number> => {
-  try {
-    const q = query(collection(db, 'users'), where('role', '==', 'buyer'));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.size;
-  } catch (error) {
-    console.error('Error getting buyers count from Firestore: ', error);
     throw error;
   }
 }
@@ -262,6 +249,7 @@ export const addOrderToFirestore = async (orderData: Omit<Order, 'id'>) => {
     await runTransaction(db, async (transaction) => {
       const orderRef = doc(collection(db, 'orders'));
 
+      // 1. Verify stock and prepare product updates
       const productUpdates = [];
       for (const item of orderData.items) {
         const productRef = doc(db, 'products', item.product.id);
@@ -280,13 +268,39 @@ export const addOrderToFirestore = async (orderData: Omit<Order, 'id'>) => {
         
         productUpdates.push({ ref: productRef, newStock });
       }
+      
+      // 2. Find and assign a random delivery person
+      const deliveryTeamQuery = query(collection(db, 'users'), 
+        where('role', '==', 'delivery'), 
+        where('associatedSellerId', '==', orderData.sellerId)
+      );
+      const deliveryTeamSnapshot = await getDocs(deliveryTeamQuery);
+      const deliveryTeam = deliveryTeamSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
 
+      let assignedDeliveryPerson = null;
+      let finalStatus: Order['status'] = 'Processing';
+
+      if (deliveryTeam.length > 0) {
+        const randomIndex = Math.floor(Math.random() * deliveryTeam.length);
+        const randomRider = deliveryTeam[randomIndex];
+        assignedDeliveryPerson = {
+            deliveryPersonId: randomRider.uid,
+            deliveryPersonName: randomRider.name,
+        };
+        finalStatus = 'Shipped'; // Auto-ship if a rider is assigned
+      }
+      
+      // 3. Commit product stock updates
       for (const update of productUpdates) {
         transaction.update(update.ref, { stock: update.newStock });
       }
-
+      
+      // 4. Create the order with assignment and status
       transaction.set(orderRef, {
         ...orderData,
+        status: finalStatus,
+        deliveryPersonId: assignedDeliveryPerson?.deliveryPersonId || null,
+        deliveryPersonName: assignedDeliveryPerson?.deliveryPersonName || null,
         createdAt: Timestamp.now(),
       });
     });
@@ -357,16 +371,18 @@ export const updateOrderStatus = async (
       const updateData: any = { status };
       const currentOrderData = orderDoc.data() as Order;
 
-      // When shipping, a delivery person MUST be assigned.
+      // This manual assignment is now a fallback. The main assignment happens at creation.
       if (status === 'Shipped') {
-        if (!deliveryPerson) {
-          throw new Error('A delivery person must be assigned to ship an order.');
+        // If a delivery person is explicitly passed, use them. Otherwise, keep existing.
+        if (deliveryPerson) {
+            updateData.deliveryPersonId = deliveryPerson.id;
+            updateData.deliveryPersonName = deliveryPerson.name;
+        } else if (!currentOrderData.deliveryPersonId) {
+            // This case should be rare now but is a good safeguard.
+            throw new Error('A delivery person must be assigned to ship an order.');
         }
-        updateData.deliveryPersonId = deliveryPerson.id;
-        updateData.deliveryPersonName = deliveryPerson.name;
       }
       
-      // For subsequent statuses, carry over the existing assignment.
       if ((status === 'Out for Delivery' || status === 'Delivered') && currentOrderData.deliveryPersonId) {
         updateData.deliveryPersonId = currentOrderData.deliveryPersonId;
         updateData.deliveryPersonName = currentOrderData.deliveryPersonName;
