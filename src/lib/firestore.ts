@@ -656,6 +656,19 @@ export const addCategory = async (data: Omit<Category, 'id'>) => {
   }
 };
 
+export const getAllCategories = async (): Promise<Category[]> => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'categories'));
+      const categories = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category));
+      // Remove duplicates by name, keeping the first one encountered
+      const uniqueCategories = Array.from(new Map(categories.map(cat => [cat.name, cat])).values());
+      return uniqueCategories;
+    } catch (error) {
+      console.error('Error getting all categories: ', error);
+      throw error;
+    }
+};
+
 export const getCategoriesBySeller = async (sellerId: string): Promise<Category[]> => {
   try {
     const q = query(collection(db, 'categories'), where('sellerId', '==', sellerId));

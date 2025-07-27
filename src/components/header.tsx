@@ -9,6 +9,7 @@ import { ShoppingCart } from 'lucide-react';
 import { Logo } from './logo';
 import { UserNav } from './user-nav';
 import { useAuth } from '@/hooks/use-auth';
+import { MegaMenu } from './mega-menu';
 
 export function Header() {
   const { cartCount } = useCart();
@@ -34,9 +35,7 @@ export function Header() {
         <Logo />
         <nav className="ml-6 flex items-center space-x-4 text-sm font-medium">
           {user?.role === 'buyer' && (
-            <Link href="/buyer" className="text-muted-foreground transition-colors hover:text-foreground">
-              Shop
-            </Link>
+            <MegaMenu />
           )}
            {user && user.role !== 'buyer' && (
             <Link href={getDashboardLink()!} className="text-muted-foreground transition-colors hover:text-foreground">
