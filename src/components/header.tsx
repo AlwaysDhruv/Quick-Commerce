@@ -12,6 +12,7 @@ import { MegaMenu } from './mega-menu';
 import { Input } from './ui/input';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+import { Logo } from './logo';
 
 function HeaderSearchBar() {
     const router = useRouter();
@@ -62,7 +63,10 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
-        <nav className="flex items-center space-x-4 text-sm font-medium mr-6">
+        <div className="mr-6">
+            <Logo />
+        </div>
+        <nav className="flex items-center space-x-4 text-sm font-medium">
           {user?.role === 'buyer' && (
             <MegaMenu />
           )}
