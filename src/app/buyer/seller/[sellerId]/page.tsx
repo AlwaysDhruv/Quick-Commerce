@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 import { 
     getProductsBySeller, 
     getSellerProfile,
@@ -34,9 +34,7 @@ function StatCard({ title, value, icon: Icon, isLoading }: { title: string, valu
 }
 
 export default function BuyerSellerProfilePage({ params }: { params: { sellerId: string } }) {
-  // Correctly unwrap the sellerId from params using React.use()
-  const sellerId = use(Promise.resolve(params.sellerId));
-
+  const { sellerId } = params;
   const [sellerName, setSellerName] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState({ productCount: 0, categoryCount: 0, buyerCount: 0 });
