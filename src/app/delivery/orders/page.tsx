@@ -109,24 +109,30 @@ function OrderRow({ order, onOrderUpdated }: { order: Order, onOrderUpdated: () 
                  </div>
                  <div className="space-y-3">
                      <h4 className="font-semibold mb-2">Shipping Address</h4>
-                    <div className="text-sm text-muted-foreground p-4 border rounded-md bg-background/50 space-y-2">
-                        <p className="font-bold text-foreground">{order.address.fullName}</p>
-                        <p>{order.address.phone}</p>
-                        <p>{order.address.streetAddress}</p>
-                        <p>{order.address.city}, {order.address.district} - {order.address.pincode}</p>
-                        <p>{order.address.country}</p>
-                         {order.address.latitude && order.address.longitude && (
-                            <a 
-                                href={`https://www.google.com/maps/search/?api=1&query=${order.address.latitude},${order.address.longitude}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center text-accent hover:underline"
-                            >
-                                <MapPin className="mr-2" />
-                                View on Map
-                            </a>
-                         )}
-                    </div>
+                    {order.address ? (
+                        <div className="text-sm text-muted-foreground p-4 border rounded-md bg-background/50 space-y-2">
+                            <p className="font-bold text-foreground">{order.address.fullName}</p>
+                            <p>{order.address.phone}</p>
+                            <p>{order.address.streetAddress}</p>
+                            <p>{order.address.city}, {order.address.district} - {order.address.pincode}</p>
+                            <p>{order.address.country}</p>
+                            {order.address.latitude && order.address.longitude && (
+                                <a 
+                                    href={`https://www.google.com/maps/search/?api=1&query=${order.address.latitude},${order.address.longitude}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center text-accent hover:underline"
+                                >
+                                    <MapPin className="mr-2" />
+                                    View on Map
+                                </a>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="text-sm text-muted-foreground p-4 border rounded-md bg-background/50">
+                            Address not available for this order.
+                        </div>
+                    )}
                      <div className="flex justify-end pt-4">
                         {order.status !== 'Delivered' && (
                              <Button onClick={() => handleStatusUpdate('Delivered')} disabled={isUpdating}>
