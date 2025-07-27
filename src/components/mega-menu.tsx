@@ -11,88 +11,94 @@ import {
   NavigationMenuTrigger,
   NavigationMenuLink,
 } from '@/components/ui/navigation-menu';
-import { getAllCategories, type Category } from '@/lib/firestore';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { BookOpen, Home, Shirt, Sparkles, Tag } from 'lucide-react';
 import Image from 'next/image';
-import { Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
+const components: { title: string; href: string; description: string, icon: React.ElementType }[] = [
+  {
+    title: 'New Arrivals',
+    href: '/buyer?search=new',
+    description: 'Check out the latest products from our sellers.',
+    icon: Sparkles
+  },
+  {
+    title: 'Best Sellers',
+    href: '/buyer?search=popular',
+    description: 'See what other customers are loving right now.',
+    icon: Tag
+  },
+   {
+    title: 'Apparel',
+    href: '/buyer?category=Apparel',
+    description: 'Find your new favorite outfit for any occasion.',
+    icon: Shirt
+  },
+   {
+    title: 'Home Goods',
+    href: '/buyer?category=Home Goods',
+    description: 'Everything you need to make your house a home.',
+    icon: Home
+  },
+   {
+    title: 'Books',
+    href: '/buyer?category=Books',
+    description: 'Get lost in a new story from our wide selection.',
+    icon: BookOpen
+  },
+];
 
 export function MegaMenu() {
-  const [categories, setCategories] = React.useState<Category[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const { toast } = useToast();
-  const router = useRouter();
-
-  React.useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const fetchedCategories = await getAllCategories();
-        setCategories(fetchedCategories.sort((a,b) => a.name.localeCompare(b.name)));
-      } catch (error) {
-        console.error('Failed to fetch categories for mega menu:', error);
-        toast({
-          title: 'Error',
-          description: 'Could not load categories.',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchCategories();
-  }, [toast]);
-
-  const handleCategoryClick = (categoryName: string) => {
-    router.push(`/buyer?category=${encodeURIComponent(categoryName)}`);
-  };
-
 
   return (
     <NavigationMenu>
       <NavigationMenuList>
         <NavigationMenuItem>
-          <NavigationMenuTrigger className="text-base">Categories</NavigationMenuTrigger>
+          <NavigationMenuTrigger className="text-base">Shop</NavigationMenuTrigger>
           <NavigationMenuContent>
-            {isLoading ? (
-              <div className="p-4 w-[200px] h-[100px] flex items-center justify-center">
-                  <Loader2 className="animate-spin" />
-              </div>
-            ) : (
-                <div className="p-4 w-full md:w-[600px] lg:w-[800px]">
-                  <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {categories.map((category) => (
-                      <li key={category.id}>
-                         <NavigationMenuLink asChild>
+             <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
+                <li className="row-span-3">
+                  <NavigationMenuLink asChild>
+                    <a
+                      className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                      href="/buyer"
+                    >
+                       <div className="relative w-full h-32 mb-4">
+                        <Image src="https://placehold.co/400x200.png" alt="Special Offer" fill className="object-cover rounded-md" data-ai-hint="store sale"/>
+                       </div>
+                      <div className="text-lg font-medium">
+                        SwiftShopper Deals
+                      </div>
+                      <p className="text-sm leading-tight text-muted-foreground">
+                        Limited time offers and special promotions.
+                      </p>
+                    </a>
+                  </NavigationMenuLink>
+                </li>
+                 {components.map((component) => (
+                    <li key={component.title}>
+                        <NavigationMenuLink asChild>
                             <a
-                                href={`/buyer?category=${encodeURIComponent(category.name)}`}
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    handleCategoryClick(category.name);
-                                }}
-                                className="flex items-center gap-3 p-3 rounded-md hover:bg-accent transition-colors"
+                                href={component.href}
+                                className={cn(
+                                "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                )}
                             >
-                                 <Image
-                                    src={category.image || 'https://placehold.co/100x100.png'}
-                                    alt={category.name}
-                                    width={40}
-                                    height={40}
-                                    className="rounded-md object-cover aspect-square"
-                                />
-                                <span className="font-medium text-sm">{category.name}</span>
+                                <div className="flex items-center gap-2">
+                                     <component.icon className="h-5 w-5 text-primary" />
+                                    <div className="text-sm font-medium leading-none">{component.title}</div>
+                                </div>
+                                <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                    {component.description}
+                                </p>
                             </a>
-                         </NavigationMenuLink>
-                      </li>
-                    ))}
-                  </ul>
-              </div>
-            )}
+                        </NavigationMenuLink>
+                    </li>
+                ))}
+              </ul>
           </NavigationMenuContent>
         </NavigationMenuItem>
       </NavigationMenuList>
     </NavigationMenu>
   );
 }
-
-    

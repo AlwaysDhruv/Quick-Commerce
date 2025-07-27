@@ -39,7 +39,7 @@ function CategoryCards({ categories }: { categories: Category[] }) {
     return (
         <div className="py-12">
             <h2 className="font-headline text-3xl font-bold text-center mb-8">Shop by Category</h2>
-             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
                 {categories.map(category => (
                     <div
                         key={category.id}
@@ -152,6 +152,8 @@ export default function BuyerPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -182,6 +184,7 @@ export default function BuyerPage() {
   const startIndex = useMemo(() => getDayOfYear() % 5, []);
 
   useEffect(() => {
+    setIsClient(true);
     const fetchProductsAndCategories = async () => {
       setIsLoading(true);
       const [fetchedProducts, fetchedCategories] = await Promise.all([
@@ -231,6 +234,11 @@ export default function BuyerPage() {
         return searchMatch && categoryMatch && priceMatch;
     });
   }, [products, filters]);
+
+  if (!isClient) {
+     return null;
+  }
+
 
   if (isLoading) {
        return (
