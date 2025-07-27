@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -12,7 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
-import { LayoutDashboard, LogIn, LogOut, UserPlus, Loader2 } from 'lucide-react';
+import { LayoutDashboard, LogIn, LogOut, UserPlus, Loader2, ListOrdered } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -98,6 +99,14 @@ export function UserNav() {
               <span>Dashboard</span>
             </Link>
           </DropdownMenuItem>
+           {user.role === 'buyer' && (
+             <DropdownMenuItem asChild>
+                <Link href="/buyer/orders">
+                  <ListOrdered className="mr-2 h-4 w-4" />
+                  <span>My Orders</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>

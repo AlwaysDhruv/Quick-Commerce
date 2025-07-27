@@ -71,7 +71,7 @@ function AiSearch({ products, onSuggestionClick }: { products: Product[], onSugg
   }
 
   return (
-    <Card className="bg-card/80">
+    <Card className="bg-transparent border-none shadow-none">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-headline text-xl">
           <Wand2 className="text-accent" />
@@ -146,7 +146,7 @@ function ProductFilters({
   };
 
   return (
-    <Card className="bg-card/80">
+    <Card className="bg-transparent border-none shadow-none">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-headline text-xl">
           <Filter className="text-accent" />
@@ -335,73 +335,66 @@ export default function BuyerPage() {
   }, [products, filters, searchQuery]);
 
   return (
-    <div className="container py-8">
-        <div className="mb-8 space-y-2">
-            <h1 className="font-headline text-3xl font-bold">Welcome, {user?.name || 'Shopper'}!</h1>
-            <p className="text-muted-foreground">Discover our curated collection of fine products.</p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
-            <aside className="md:col-span-1">
-                <div className="sticky top-24">
-                  <ScrollArea className="h-[calc(100vh-10rem)] pr-6">
-                    <div className="space-y-6">
-                      <AiSearch products={products} onSuggestionClick={handleAiSuggestion} />
-                      <ProductFilters products={products} filters={filters} onFilterChange={setFilters} />
-                    </div>
-                  </ScrollArea>
+    <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+        <aside className="md:col-span-1 -mx-6 -mt-6 -mb-6 md:m-0">
+            <div className="sticky top-24">
+              <ScrollArea className="h-[calc(100vh-8rem)] p-6 md:p-0 md:pr-6">
+                <div className="space-y-6">
+                  <AiSearch products={products} onSuggestionClick={handleAiSuggestion} />
+                  <ProductFilters products={products} filters={filters} onFilterChange={setFilters} />
                 </div>
-            </aside>
+              </ScrollArea>
+            </div>
+        </aside>
 
-            <main className="md:col-span-3">
-                 <CartRecommendations allProducts={products} />
-                
-                <div>
-                    <div className="flex justify-between items-center mb-6 gap-4">
-                      <div className="relative w-full max-w-sm">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search for products..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                      <h2 className="font-headline text-xl font-bold whitespace-nowrap">
-                        All Products ({filteredProducts.length})
-                      </h2>
-                       {(filters.categories.length > 0 || searchQuery) && (
-                          <Button variant="ghost" onClick={() => {
-                            setFilters(f => ({ ...f, categories: []}));
-                            setSearchQuery('');
-                          }}>Clear Filters</Button>
-                       )}
-                    </div>
-                    {isLoading ? (
-                    <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="space-y-4">
-                                <Skeleton className="h-[250px] w-full" />
-                                <Skeleton className="h-6 w-3/4" />
-                                <Skeleton className="h-4 w-1/4" />
-                            </div>
-                        ))}
-                    </div>
-                    ) : filteredProducts.length > 0 ? (
-                    <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {filteredProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                        ))}
-                    </div>
-                    ) : (
-                        <div className="mt-10 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 py-20 text-center">
-                            <h3 className="text-xl font-semibold">No Products Found</h3>
-                            <p className="mt-2 text-muted-foreground">Try adjusting your filters or search terms.</p>
+        <main className="md:col-span-3">
+             <CartRecommendations allProducts={products} />
+            
+            <div>
+                <div className="flex justify-between items-center mb-6 gap-4">
+                  <div className="relative w-full max-w-sm">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search for products..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <h2 className="font-headline text-xl font-bold whitespace-nowrap">
+                    All Products ({filteredProducts.length})
+                  </h2>
+                   {(filters.categories.length > 0 || searchQuery) && (
+                      <Button variant="ghost" onClick={() => {
+                        setFilters(f => ({ ...f, categories: []}));
+                        setSearchQuery('');
+                      }}>Clear Filters</Button>
+                   )}
+                </div>
+                {isLoading ? (
+                <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="space-y-4">
+                            <Skeleton className="h-[250px] w-full" />
+                            <Skeleton className="h-6 w-3/4" />
+                            <Skeleton className="h-4 w-1/4" />
                         </div>
-                    )}
+                    ))}
                 </div>
-            </main>
-        </div>
+                ) : filteredProducts.length > 0 ? (
+                <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                    {filteredProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                    ))}
+                </div>
+                ) : (
+                    <div className="mt-10 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 py-20 text-center">
+                        <h3 className="text-xl font-semibold">No Products Found</h3>
+                        <p className="mt-2 text-muted-foreground">Try adjusting your filters or search terms.</p>
+                    </div>
+                )}
+            </div>
+        </main>
     </div>
   );
 }
