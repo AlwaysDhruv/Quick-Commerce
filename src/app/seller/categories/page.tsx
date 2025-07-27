@@ -145,7 +145,6 @@ function DeleteCategoryDialog({
   category: Category;
   onSuccess: () => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
@@ -155,7 +154,7 @@ function DeleteCategoryDialog({
       await deleteCategory(category.id);
       toast({ title: 'Category Deleted' });
       onSuccess();
-      setOpen(false);
+      // No need to setOpen(false) as the dialog will close on action
     } catch (error) {
       console.error(error);
       toast({ title: 'Error deleting category', variant: 'destructive' });
@@ -165,7 +164,7 @@ function DeleteCategoryDialog({
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
+    <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button variant="ghost" size="icon" className="text-destructive">
           <Trash2 className="h-4 w-4" />
@@ -191,7 +190,7 @@ function DeleteCategoryDialog({
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
-    </Dialog>
+    </AlertDialog>
   );
 }
 
