@@ -172,22 +172,16 @@ function OrderRow({ order, onOrderUpdated, deliveryTeam }: { order: Order; onOrd
                         </DropdownMenuPortal>
                      </DropdownMenuSub>
                  )}
-                 {order.status === 'Shipped' && (
-                    <DropdownMenuItem onClick={() => handleStatusUpdate('Out for Delivery')}>
-                        <Truck className="mr-2" />
-                        Mark as Out for Delivery
-                    </DropdownMenuItem>
-                 )}
-                 {order.status === 'Out for Delivery' && (
-                    <DropdownMenuItem onClick={() => handleStatusUpdate('Delivered')}>
-                        <CheckCircle className="mr-2" />
-                        Mark as Delivered
+                 {(order.status === 'Shipped' || order.status === 'Out for Delivery') && (
+                     <DropdownMenuItem onClick={() => handleStatusUpdate(order.status === 'Shipped' ? 'Out for Delivery' : 'Delivered')}>
+                        {order.status === 'Shipped' ? <Truck className="mr-2" /> : <CheckCircle className="mr-2" />}
+                        {order.status === 'Shipped' ? 'Mark as Out for Delivery' : 'Mark as Delivered'}
                     </DropdownMenuItem>
                  )}
                 <DropdownMenuSeparator />
                 <DeleteOrderDialog order={order} onOrderDeleted={onOrderUpdated}>
                     <DropdownMenuItem
-                      className="text-destructive"
+                      className="text-destructive focus:text-destructive focus:bg-destructive/10"
                       onSelect={(e) => {e.preventDefault()}}
                       asChild
                     >
@@ -358,3 +352,5 @@ export default function OrdersPage() {
     </div>
   );
 }
+
+    

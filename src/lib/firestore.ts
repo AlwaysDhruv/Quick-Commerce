@@ -330,11 +330,7 @@ export const updateOrderStatus = async (
       }
 
       const updateData: any = { status };
-
-      // Handle status-specific logic
-      if (status === 'Delivered') {
-        updateData.deliveredAt = Timestamp.now();
-      }
+      const currentOrderData = orderDoc.data() as Order;
 
       // If a delivery person is provided (on 'Shipped'), assign them.
       if (status === 'Shipped') {
@@ -343,6 +339,17 @@ export const updateOrderStatus = async (
         }
         updateData.deliveryPersonId = deliveryPerson.id;
         updateData.deliveryPersonName = deliveryPerson.name;
+      }
+
+      // For subsequent status changes, ensure delivery person info is carried over
+      if (status === 'Out for Delivery' || status === 'Delivered') {
+        updateData.deliveryPersonId = currentOrderData.deliveryPersonId;
+        updateData.deliveryPersonName = currentOrderData.deliveryPersonName;
+      }
+      
+      // Handle status-specific logic
+      if (status === 'Delivered') {
+        updateData.deliveredAt = Timestamp.now();
       }
       
       transaction.update(orderRef, updateData);
@@ -630,4 +637,5 @@ export const approveSellerInvite = async (invite: SellerInvite) => {
         throw error;
     }
 }
+    
     
