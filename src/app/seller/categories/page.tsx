@@ -1,9 +1,15 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -43,7 +49,8 @@ import {
   updateCategory,
   deleteCategory,
 } from '@/lib/firestore';
-import { Loader2, PlusCircle, Trash2, Edit, Search } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Edit, Search, Upload } from 'lucide-react';
+import Image from 'next/image';
 
 function CategoryDialog({
   onSuccess,
@@ -57,14 +64,28 @@ function CategoryDialog({
   const [open, setOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [name, setName] = useState(category?.name || '');
+  const [image, setImage] = useState(category?.image || '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEditing = !!category;
 
   useEffect(() => {
     if (open) {
       setName(category?.name || '');
+      setImage(category?.image || '');
     }
   }, [open, category]);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!name) {
@@ -77,12 +98,17 @@ function CategoryDialog({
     }
 
     setIsSaving(true);
+    const categoryData = {
+      name,
+      image: image || 'https://placehold.co/400x300.png',
+    };
+
     try {
       if (isEditing) {
-        await updateCategory(category.id, name);
+        await updateCategory(category.id, categoryData);
         toast({ title: 'Category Updated' });
       } else {
-        await addCategory({ name, sellerId: user.uid });
+        await addCategory({ ...categoryData, sellerId: user.uid });
         toast({ title: 'Category Added' });
       }
       onSuccess();
@@ -114,18 +140,30 @@ function CategoryDialog({
           <DialogTitle>{isEditing ? 'Edit' : 'Add New'} Category</DialogTitle>
           <DialogDescription>
             {isEditing
-              ? `Update the name for the ${category.name} category.`
+              ? `Update the details for the ${category.name} category.`
               : 'Create a new category for your products.'}
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
-          <Label htmlFor="name">Category Name</Label>
-          <Input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g., Electronics"
-          />
+        <div className="py-4 space-y-4">
+          <div>
+            <Label htmlFor="name">Category Name</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., Electronics"
+            />
+          </div>
+          <div>
+            <Label htmlFor="image">Category Image</Label>
+             <div className="col-span-3 flex items-center gap-2 mt-2">
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" /> Upload
+                </Button>
+                <Input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
+                {image && <Image src={image} alt="preview" width={40} height={40} className="rounded-md object-cover" />}
+            </div>
+          </div>
         </div>
         <DialogFooter>
           <Button onClick={handleSubmit} disabled={isSaving}>
@@ -251,6 +289,7 @@ export default function CategoriesPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[80px]">Image</TableHead>
                 <TableHead>Category Name</TableHead>
                 <TableHead className="text-right w-[120px]">Actions</TableHead>
               </TableRow>
@@ -258,14 +297,14 @@ export default function CategoriesPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={2} className="text-center">
+                  <TableCell colSpan={3} className="text-center">
                     <Loader2 className="mx-auto my-8 h-8 w-8 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
               ) : filteredCategories.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={2}
+                    colSpan={3}
                     className="py-10 text-center text-muted-foreground"
                   >
                     No categories found.
@@ -274,6 +313,15 @@ export default function CategoriesPage() {
               ) : (
                 filteredCategories.map((cat) => (
                   <TableRow key={cat.id}>
+                    <TableCell>
+                      <Image
+                        src={cat.image || 'https://placehold.co/100x100.png'}
+                        alt={cat.name}
+                        width={64}
+                        height={64}
+                        className="rounded-md object-cover"
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{cat.name}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

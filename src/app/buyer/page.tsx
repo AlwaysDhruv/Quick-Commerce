@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { recommendProducts } from '@/ai/flows/recommend-products';
 import { Wand2, Loader2, ShoppingCart, Lightbulb, Filter, Search, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getProductsFromFirestore, getCategoriesBySeller } from '@/lib/firestore';
+import { getProductsFromFirestore, getCategoriesBySeller, type Category } from '@/lib/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCart } from '@/hooks/use-cart';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -21,6 +21,7 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
+import Image from 'next/image';
 
 function AiSearch({ products, onSuggestionClick }: { products: Product[], onSuggestionClick: (suggestion: string) => void }) {
   const [preferences, setPreferences] = useState('');
@@ -299,22 +300,29 @@ function CartRecommendations({ allProducts }: { allProducts: Product[] }) {
   )
 }
 
-function CategoryBoxes({ categories, selectedCategories, onCategorySelect }: { categories: string[], selectedCategories: string[], onCategorySelect: (category: string) => void }) {
+function CategoryBoxes({ categories, selectedCategories, onCategorySelect }: { categories: Category[], selectedCategories: string[], onCategorySelect: (category: string) => void }) {
     if (categories.length === 0) return null;
 
     return (
         <div className="mb-12">
             <h2 className="font-headline text-2xl font-bold mb-4">Shop by Category</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {categories.map(category => (
-                    <Button
-                        key={category}
-                        variant={selectedCategories.includes(category) ? "default" : "outline"}
-                        onClick={() => onCategorySelect(category)}
-                        className="h-auto py-4 text-center justify-center"
+                    <div 
+                        key={category.id} 
+                        onClick={() => onCategorySelect(category.name)}
+                        className={`relative aspect-video rounded-lg overflow-hidden cursor-pointer group border-2 ${selectedCategories.includes(category.name) ? 'border-primary' : 'border-transparent'}`}
                     >
-                        {category}
-                    </Button>
+                         <Image 
+                            src={category.image || 'https://placehold.co/400x300.png'} 
+                            alt={category.name} 
+                            fill 
+                            className="object-cover transition-transform duration-300 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition-colors flex items-center justify-center p-2">
+                            <h3 className="text-white text-center font-semibold text-lg">{category.name}</h3>
+                        </div>
+                    </div>
                 ))}
             </div>
         </div>
@@ -324,7 +332,7 @@ function CategoryBoxes({ categories, selectedCategories, onCategorySelect }: { c
 export default function BuyerPage() {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
-  const [allCategories, setAllCategories] = useState<string[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState({ categories: [] as string[], priceRange: [0, 500] as [number, number] });
   const [searchQuery, setSearchQuery] = useState('');
@@ -335,11 +343,23 @@ export default function BuyerPage() {
   useEffect(() => {
     const fetchProductsAndCategories = async () => {
       setIsLoading(true);
-      const fetchedProducts = await getProductsFromFirestore();
-      const uniqueCategories = [...new Set(fetchedProducts.map(p => p.category))].sort();
+      // We assume one seller for simplicity, in a real app you'd fetch from all or based on logic
+      const aSellerId = (await getProductsFromFirestore())[0]?.sellerId;
+      if (aSellerId) {
+        const [fetchedProducts, fetchedCategories] = await Promise.all([
+          getProductsFromFirestore(),
+          getCategoriesBySeller(aSellerId)
+        ]);
+         setAllCategories(fetchedCategories.sort((a,b) => a.name.localeCompare(b.name)));
+         setProducts(fetchedProducts);
+      } else {
+        const fetchedProducts = await getProductsFromFirestore();
+        setProducts(fetchedProducts);
+        // If no seller, maybe extract categories from products
+        const uniqueCategories = [...new Set(fetchedProducts.map(p => p.category))].map(c => ({ id: c, name: c, sellerId: '' }));
+        setAllCategories(uniqueCategories);
+      }
       
-      setProducts(fetchedProducts);
-      setAllCategories(uniqueCategories);
       setIsLoading(false);
     };
 

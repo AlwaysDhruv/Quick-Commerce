@@ -644,6 +644,7 @@ export type Category = {
   id: string;
   name: string;
   sellerId: string;
+  image?: string;
 };
 
 export const addCategory = async (data: Omit<Category, 'id'>) => {
@@ -666,10 +667,10 @@ export const getCategoriesBySeller = async (sellerId: string): Promise<Category[
   }
 };
 
-export const updateCategory = async (categoryId: string, name: string) => {
+export const updateCategory = async (categoryId: string, data: { name: string; image?: string }) => {
   try {
     const categoryRef = doc(db, 'categories', categoryId);
-    await updateDoc(categoryRef, { name });
+    await updateDoc(categoryRef, data);
   } catch (error) {
     console.error('Error updating category: ', error);
     throw error;

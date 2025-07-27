@@ -38,12 +38,12 @@ export default function SeedDataPage() {
     setIsSeeding('categories');
     try {
       const existingCategoryNames = new Set(categories.map(c => c.name));
-      const categoriesToAdd = sampleCategories.filter(name => !existingCategoryNames.has(name));
+      const categoriesToAdd = sampleCategories.filter(cat => !existingCategoryNames.has(cat.name));
       
       if (categoriesToAdd.length === 0) {
         toast({ title: "All sample categories already exist." });
       } else {
-        await Promise.all(categoriesToAdd.map(name => addCategory({ name, sellerId: user.uid })));
+        await Promise.all(categoriesToAdd.map(cat => addCategory({ ...cat, sellerId: user.uid })));
         toast({ title: "Sample Categories Seeded!", description: `${categoriesToAdd.length} new categories were added.`});
         await fetchCategories();
       }
