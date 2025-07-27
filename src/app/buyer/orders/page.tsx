@@ -131,9 +131,9 @@ export default function BuyerOrdersPage() {
   }, [orders, searchQuery]);
 
   return (
-    <div className="space-y-6">
+    <div className="container py-12 space-y-8">
       <div>
-        <h1 className="text-2xl font-bold font-headline">My Orders</h1>
+        <h1 className="text-3xl font-bold font-headline">My Orders</h1>
         <p className="text-muted-foreground">
           View the history of your past orders.
         </p>

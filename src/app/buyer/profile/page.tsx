@@ -194,7 +194,7 @@ export default function BuyerProfilePage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="container py-12 space-y-8">
         <div>
             <h1 className="text-3xl font-bold font-headline">My Profile</h1>
             <p className="text-muted-foreground">Manage your personal information and view your order history.</p>

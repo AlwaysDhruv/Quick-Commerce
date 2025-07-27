@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 
 function StatCard({ title, value, icon: Icon, isLoading }: { title: string, value: string | number, icon: React.ElementType, isLoading: boolean }) {
     return (
-        <div className="rounded-lg border bg-card/50 p-6 flex items-center gap-6">
+        <div className="rounded-lg border bg-card p-6 flex items-center gap-6">
             <div className="bg-primary/20 text-primary p-4 rounded-full">
                 <Icon className="h-8 w-8" />
             </div>
@@ -36,7 +36,7 @@ function StatCard({ title, value, icon: Icon, isLoading }: { title: string, valu
     );
 }
 
-export default function BuyerSellerProfilePage({ params: { sellerId } }: { params: { sellerId: string } }) {
+export default function BuyerSellerProfilePage({ params }: { params: { sellerId: string } }) {
   const [sellerName, setSellerName] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -45,6 +45,7 @@ export default function BuyerSellerProfilePage({ params: { sellerId } }: { param
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const sellerId = params.sellerId;
     if (sellerId) {
       const fetchSellerData = async () => {
         setIsLoading(true);
@@ -80,7 +81,7 @@ export default function BuyerSellerProfilePage({ params: { sellerId } }: { param
       };
       fetchSellerData();
     }
-  }, [sellerId]);
+  }, [params.sellerId]);
 
   if (error) {
     return (
@@ -95,11 +96,11 @@ export default function BuyerSellerProfilePage({ params: { sellerId } }: { param
   }
 
   return (
-    <div className="container py-8 space-y-12">
-      <div className="mb-8 p-6 rounded-lg bg-card border">
-        <p className="text-sm text-muted-foreground">Welcome to the storefront of</p>
-        <h1 className="font-headline text-4xl font-bold text-primary">{isLoading ? <Skeleton className="h-12 w-1/3" /> : `${sellerName}'s Store`}</h1>
-      </div>
+    <div className="container py-12 space-y-12">
+      <header className="space-y-2">
+        <p className="text-lg text-muted-foreground">Welcome to the storefront of</p>
+        <h1 className="font-headline text-5xl font-bold text-primary">{isLoading ? <Skeleton className="h-12 w-1/3" /> : `${sellerName}'s Store`}</h1>
+      </header>
 
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <StatCard title="Total Products" value={stats.productCount} icon={Package} isLoading={isLoading} />
@@ -107,7 +108,7 @@ export default function BuyerSellerProfilePage({ params: { sellerId } }: { param
             <StatCard title="Happy Customers" value={stats.buyerCount} icon={Users} isLoading={isLoading} />
         </div>
 
-      <div>
+      <section>
         <h2 className="font-headline text-3xl font-bold mb-6">Categories</h2>
          {isLoading ? (
             <div className="flex flex-wrap gap-2">
@@ -124,9 +125,9 @@ export default function BuyerSellerProfilePage({ params: { sellerId } }: { param
         ) : (
             <p className="text-muted-foreground">This seller has not added any categories yet.</p>
         )}
-      </div>
+      </section>
 
-       <div>
+       <section>
         <h2 className="font-headline text-3xl font-bold mb-6">All Products</h2>
         {isLoading ? (
              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -151,7 +152,7 @@ export default function BuyerSellerProfilePage({ params: { sellerId } }: { param
                 <p className="mt-2 text-muted-foreground">{sellerName} hasn't listed any products yet. Check back soon!</p>
             </div>
         )}
-       </div>
+       </section>
     </div>
   );
 }
