@@ -40,21 +40,22 @@ export default function BuyerSellerProfilePage({ params }: { params: { sellerId:
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (params.sellerId) {
+    const sellerId = params.sellerId;
+    if (sellerId) {
       const fetchSellerData = async () => {
         setIsLoading(true);
         setError(null);
         try {
-          const sellerData = await getSellerProfile(params.sellerId);
+          const sellerData = await getSellerProfile(sellerId);
           if (!sellerData) {
             throw new Error('Seller not found.');
           }
           setSellerName(sellerData.name);
 
           const [sellerProducts, categoryCount, buyerCount] = await Promise.all([
-            getProductsBySeller(params.sellerId),
-            getCategoryCountForSeller(params.sellerId),
-            getUniqueBuyerCountForSeller(params.sellerId)
+            getProductsBySeller(sellerId),
+            getCategoryCountForSeller(sellerId),
+            getUniqueBuyerCountForSeller(sellerId)
           ]);
           
           const productsWithSellerName = sellerProducts.map(p => ({ ...p, sellerName: sellerData.name }));
