@@ -16,17 +16,11 @@ import { useAuth } from '@/hooks/use-auth';
 import { LayoutDashboard, LogIn, LogOut, UserPlus, Loader2, ListOrdered, ShoppingBag, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
 
 
 export function UserNav() {
   const { user, logout, loading } = useAuth();
   const router = useRouter();
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -45,10 +39,6 @@ export function UserNav() {
       default:
         return "/";
     }
-  }
-
-  if (!isClient) {
-    return <Skeleton className="h-8 w-8" />;
   }
 
   if (loading) {
@@ -131,8 +121,4 @@ export function UserNav() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
-
-function Skeleton({ className }: { className?: string }) {
-    return <div className={`animate-pulse rounded-full bg-muted ${className}`} />;
 }
