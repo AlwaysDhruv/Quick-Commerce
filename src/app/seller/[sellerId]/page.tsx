@@ -7,7 +7,9 @@ import type { Product } from '@/lib/mock-data';
 import { ProductCard } from '@/components/product-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Frown, Store } from 'lucide-react';
+import { Frown, Store, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
 
 export default function SellerProfilePage({ params }: { params: { sellerId: string } }) {
   const { sellerId } = params;
@@ -15,35 +17,51 @@ export default function SellerProfilePage({ params }: { params: { sellerId: stri
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    const fetchSellerData = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const sellerData = await getSellerProfile(sellerId);
-        if (!sellerData) {
-          throw new Error('Seller not found.');
+    // If auth is done loading and there's no user, redirect to login
+    if (!authLoading && !user) {
+      router.push('/login');
+      return;
+    }
+    
+    // If we have a user, fetch the seller data
+    if (user && sellerId) {
+      const fetchSellerData = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+          const sellerData = await getSellerProfile(sellerId);
+          if (!sellerData) {
+            throw new Error('Seller not found.');
+          }
+          setSellerName(sellerData.name);
+
+          const sellerProducts = await getProductsBySeller(sellerId);
+          
+          const productsWithSellerName = sellerProducts.map(p => ({ ...p, sellerName: sellerData.name }));
+          setProducts(productsWithSellerName);
+
+        } catch (err) {
+          console.error(err);
+          setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+        } finally {
+          setIsLoading(false);
         }
-        setSellerName(sellerData.name);
-
-        const sellerProducts = await getProductsBySeller(sellerId);
-        
-        const productsWithSellerName = sellerProducts.map(p => ({ ...p, sellerName: sellerData.name }));
-        setProducts(productsWithSellerName);
-
-      } catch (err) {
-        console.error(err);
-        setError(err instanceof Error ? err.message : 'An unknown error occurred.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (sellerId) {
+      };
       fetchSellerData();
     }
-  }, [sellerId]);
+  }, [sellerId, user, authLoading, router]);
+
+  if (authLoading || (!user && !authLoading)) {
+     return (
+      <div className="container flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
