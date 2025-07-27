@@ -49,7 +49,18 @@ export const getUserFromFirestore = async (userId: string): Promise<User | null>
 export const updateUserAddress = async (userId: string, address: Address) => {
     try {
         const userRef = doc(db, 'users', userId);
-        await updateDoc(userRef, { address });
+        // Create a new object to avoid mutating the original address object.
+        const addressToSave = { ...address };
+
+        // Remove properties that are undefined, as Firestore doesn't support them.
+        Object.keys(addressToSave).forEach(key => {
+            const typedKey = key as keyof Address;
+            if (addressToSave[typedKey] === undefined) {
+                delete addressToSave[typedKey];
+            }
+        });
+
+        await updateDoc(userRef, { address: addressToSave });
     } catch (error) {
         console.error('Error updating user address in Firestore: ', error);
         throw error;

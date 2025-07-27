@@ -84,8 +84,14 @@ export default function RegisterAddressPage() {
         setIsSaving(true);
         try {
             const addressToSave: Address = {
-                fullName, phone, streetAddress, city, district, country, pincode, latitude, longitude
+                fullName, phone, streetAddress, city, district, country, pincode,
             };
+            
+            // Only include lat/lng if they are defined
+            if (typeof latitude === 'number' && typeof longitude === 'number') {
+                addressToSave.latitude = latitude;
+                addressToSave.longitude = longitude;
+            }
             
             await updateUserAddress(user.uid, addressToSave);
             toast({ title: 'Address Saved!', description: 'Your default shipping address has been set.' });
