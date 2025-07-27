@@ -61,12 +61,10 @@ function CategoryCards({ categories }: { categories: Category[] }) {
 }
 
 function ProductFilters({
-  products,
   filters,
   onFilterChange,
   allCategories
 }: {
-  products: Product[];
   filters: { categories: string[]; priceRange: [number, number], searchQuery: string };
   onFilterChange: (filters: any) => void;
   allCategories: Category[];
@@ -181,6 +179,15 @@ export default function BuyerPage() {
 
     fetchProductsAndCategories();
   }, []);
+  
+  useEffect(() => {
+    // Update filters based on URL changes
+    setFilters({
+        categories: searchParams.has('category') ? [searchParams.get('category')!] : [],
+        priceRange: [0, 500], // reset price range on nav
+        searchQuery: searchParams.get('search') || '',
+    });
+  }, [searchParams]);
 
   const handleFilterChange = (newFilters: any) => {
       setFilters(newFilters);
@@ -189,9 +196,15 @@ export default function BuyerPage() {
           params.set('search', newFilters.searchQuery);
       }
       if (newFilters.categories.length > 0) {
-          params.set('category', newFilters.categories[0]); // Simple for now, just one category in URL
+          // simple for now, only handle single category in URL
+          params.set('category', newFilters.categories[0]); 
       }
-      router.push(`/buyer?${params.toString()}`, { scroll: false });
+      // Only push new URL if filters are actually set
+      if (newFilters.searchQuery || newFilters.categories.length > 0) {
+          router.push(`/buyer?${params.toString()}`, { scroll: false });
+      } else {
+          router.push('/buyer', { scroll: false });
+      }
   }
 
   const filteredProducts = useMemo(() => {
@@ -225,7 +238,6 @@ export default function BuyerPage() {
         <div className="container py-8">
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
                 <ProductFilters
-                    products={products}
                     filters={filters}
                     onFilterChange={handleFilterChange}
                     allCategories={allCategories}
@@ -295,5 +307,3 @@ export default function BuyerPage() {
     </div>
   );
 }
-
-    
