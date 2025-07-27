@@ -132,8 +132,14 @@ function OrderRow({ order, onOrderUpdated }: { order: Order, onOrderUpdated: () 
                             Address not available for this order.
                         </div>
                     )}
-                     <div className="flex justify-end pt-4">
-                        {order.status !== 'Delivered' && (
+                     <div className="flex justify-end pt-4 gap-2">
+                        {order.status === 'Shipped' && (
+                             <Button onClick={() => handleStatusUpdate('Out for Delivery')} disabled={isUpdating}>
+                                {isUpdating ? <Loader2 className="mr-2 animate-spin" /> : <PackageCheck className="mr-2" /> }
+                                Mark as Out for Delivery
+                            </Button>
+                        )}
+                        {order.status === 'Out for Delivery' && (
                              <Button onClick={() => handleStatusUpdate('Delivered')} disabled={isUpdating}>
                                 {isUpdating ? <Loader2 className="mr-2 animate-spin" /> : <CheckCircle className="mr-2" /> }
                                 Mark as Delivered
@@ -170,7 +176,7 @@ export default function DeliveryOrdersPage() {
   const { toast } = useToast();
 
   const fetchOrders = async () => {
-    if (user && user.associatedSellerId) {
+    if (user?.uid) {
       setIsLoading(true);
       const fetchedOrders = await getOrdersByDeliveryPerson(user.uid);
       fetchedOrders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
@@ -190,29 +196,28 @@ export default function DeliveryOrdersPage() {
 
   // Real-time listener for new orders
   useEffect(() => {
-    if (!user?.associatedSellerId) return;
+    if (!user?.uid) return;
 
     const q = query(
         collection(db, 'orders'),
-        where('sellerId', '==', user.associatedSellerId)
+        where('deliveryPersonId', '==', user.uid)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-        let hasNewOrders = false;
+        let hasNewData = false;
         snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-                const newOrder = { id: change.doc.id, ...change.doc.data() } as Order;
-                // Only toast if it's not an initial load, by checking if the order is already in state
-                if (!orders.some(o => o.id === newOrder.id)) {
-                    hasNewOrders = true;
+            if (change.type === "added" || change.type === 'modified') {
+                const changedOrder = { id: change.doc.id, ...change.doc.data() } as Order;
+                if (!orders.some(o => o.id === changedOrder.id && o.status === changedOrder.status)) {
+                    hasNewData = true;
                 }
             }
         });
 
-        if (hasNewOrders) {
+        if (hasNewData) {
              toast({
-                title: 'New Order!',
-                description: 'A new order has been assigned to you.',
+                title: 'Orders Updated!',
+                description: 'Your order list has been updated.',
             });
             fetchOrders(); // Refetch all orders to get the latest list
         }
@@ -220,7 +225,7 @@ export default function DeliveryOrdersPage() {
 
     return () => unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.associatedSellerId, orders]);
+  }, [user?.uid, orders]);
 
 
   const stats = useMemo(() => {
@@ -247,8 +252,8 @@ export default function DeliveryOrdersPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Orders</CardTitle>
-          <CardDescription>A list of the most recent orders assigned to you.</CardDescription>
+          <CardTitle>Your Deliveries</CardTitle>
+          <CardDescription>A list of the orders assigned to you for delivery.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>

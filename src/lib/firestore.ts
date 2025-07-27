@@ -1,6 +1,7 @@
 
 
 
+
 import { doc, getDoc, setDoc, addDoc, collection, getDocs, query, where, Timestamp, updateDoc, deleteDoc, writeBatch, runTransaction } from 'firebase/firestore';
 import { db } from './firebase';
 import type { User } from '@/hooks/use-auth';
@@ -300,12 +301,7 @@ export const getOrdersByBuyer = async (buyerId: string): Promise<Order[]> => {
 
 export const getOrdersByDeliveryPerson = async (deliveryPersonId: string): Promise<Order[]> => {
     try {
-        const userDoc = await getDoc(doc(db, 'users', deliveryPersonId));
-        const sellerId = userDoc.data()?.associatedSellerId;
-
-        if (!sellerId) return [];
-
-        const q = query(collection(db, "orders"), where("sellerId", "==", sellerId));
+        const q = query(collection(db, "orders"), where("deliveryPersonId", "==", deliveryPersonId));
         const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
     } catch (error) {
@@ -324,14 +320,27 @@ export const deleteOrderFromFirestore = async (orderId: string) => {
   }
 };
 
-export const updateOrderStatus = async (orderId: string, status: Order['status']) => {
+export const updateOrderStatus = async (
+  orderId: string, 
+  status: Order['status'],
+  deliveryPerson?: { id: string; name: string } | null
+) => {
   try {
     const orderRef = doc(db, 'orders', orderId);
-    const updateData: { status: Order['status'], deliveredAt?: Timestamp } = { status };
+    const updateData: Partial<Order> = { status };
+
     if (status === 'Delivered') {
-        updateData.deliveredAt = Timestamp.now();
+      updateData.deliveredAt = Timestamp.now();
     }
-    await updateDoc(orderRef, updateData);
+    
+    // If a delivery person is provided, assign them to the order.
+    // This is typically done when status is 'Shipped' or 'Out for Delivery'.
+    if (deliveryPerson) {
+        updateData.deliveryPersonId = deliveryPerson.id;
+        updateData.deliveryPersonName = deliveryPerson.name;
+    }
+
+    await updateDoc(orderRef, updateData as any);
   } catch (error) {
     console.error('Error updating order status: ', error);
     throw error;

@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { getOrdersBySeller, updateOrderStatus, deleteOrderFromFirestore, type Order } from '@/lib/firestore';
-import { useAuth } from '@/hooks/use-auth';
+import { getOrdersBySeller, updateOrderStatus, deleteOrderFromFirestore, type Order, getDeliveryTeamForSeller } from '@/lib/firestore';
+import { useAuth, type User } from '@/hooks/use-auth';
 import { Loader2, MoreHorizontal, Trash2, ChevronDown, CheckCircle, Truck, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
@@ -78,18 +78,18 @@ function DeleteOrderDialog({ order, onOrderDeleted, children }: { order: Order; 
   )
 }
 
-function OrderRow({ order, onOrderUpdated }: { order: Order; onOrderUpdated: () => void }) {
+function OrderRow({ order, onOrderUpdated, deliveryTeam }: { order: Order; onOrderUpdated: () => void, deliveryTeam: User[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleStatusUpdate = async (status: Order['status']) => {
+  const handleStatusUpdate = async (status: Order['status'], deliveryPerson?: { id: string, name: string }) => {
     setIsUpdating(true);
     try {
-      await updateOrderStatus(order.id, status);
+      await updateOrderStatus(order.id, status, deliveryPerson);
       toast({
         title: 'Order Status Updated',
-        description: `Order ...${order.id.slice(-6)} is now ${status}.`
+        description: `Order ...${order.id.slice(-6)} is now ${status}. ${deliveryPerson ? `Assigned to ${deliveryPerson.name}` : ''}`
       });
       onOrderUpdated();
     } catch(error) {
@@ -144,25 +144,31 @@ function OrderRow({ order, onOrderUpdated }: { order: Order; onOrderUpdated: () 
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
+                    <DropdownMenuSubTrigger disabled={isUpdating}>
                         <Truck className="mr-2" />
                         Update Status
                     </DropdownMenuSubTrigger>
                     <DropdownMenuPortal>
                         <DropdownMenuSubContent>
-                             <DropdownMenuItem onClick={() => handleStatusUpdate('Shipped')} disabled={isUpdating}>
-                                Shipped
-                            </DropdownMenuItem>
-                             <DropdownMenuItem onClick={() => handleStatusUpdate('Out for Delivery')} disabled={isUpdating}>
-                                Out for Delivery
-                            </DropdownMenuItem>
+                             <DropdownMenuSub>
+                               <DropdownMenuSubTrigger>Assign & Ship</DropdownMenuSubTrigger>
+                               <DropdownMenuPortal>
+                                 <DropdownMenuSubContent>
+                                    {deliveryTeam.length > 0 ? deliveryTeam.map(person => (
+                                        <DropdownMenuItem key={person.uid} onClick={() => handleStatusUpdate('Shipped', { id: person.uid, name: person.name })}>
+                                            {person.name}
+                                        </DropdownMenuItem>
+                                    )) : <DropdownMenuItem disabled>No delivery staff found</DropdownMenuItem>}
+                                 </DropdownMenuSubContent>
+                               </DropdownMenuPortal>
+                             </DropdownMenuSub>
                              <DropdownMenuItem onClick={() => handleStatusUpdate('Delivered')} disabled={isUpdating}>
-                                Delivered
+                                Mark as Delivered
                             </DropdownMenuItem>
                         </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                 </DropdownMenuSub>
-                <DeleteOrderDialog order={order} onOrderUpdated={onOrderUpdated}>
+                <DeleteOrderDialog order={order} onOrderDeleted={onOrderUpdated}>
                     <DropdownMenuItem
                       className="text-destructive"
                       onSelect={(e) => {e.preventDefault()}}
@@ -238,6 +244,14 @@ function OrderRow({ order, onOrderUpdated }: { order: Order; onOrderUpdated: () 
                             </a>
                          )}
                     </div>
+                     {order.deliveryPersonName && (
+                        <>
+                         <h4 className="font-semibold mb-2 mt-4">Assigned To</h4>
+                         <div className="text-sm text-muted-foreground p-4 border rounded-md bg-background/50 space-y-2">
+                            <p className="font-bold text-foreground flex items-center gap-2"><Truck className="h-4 w-4" />{order.deliveryPersonName}</p>
+                         </div>
+                        </>
+                    )}
                  </div>
               </div>
             </TableCell>
@@ -249,23 +263,27 @@ function OrderRow({ order, onOrderUpdated }: { order: Order; onOrderUpdated: () 
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [deliveryTeam, setDeliveryTeam] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
-  const fetchOrders = async () => {
+  const fetchData = async () => {
     if (user) {
       setIsLoading(true);
-      const fetchedOrders = await getOrdersBySeller(user.uid);
-      // Sort orders by most recent
+      const [fetchedOrders, fetchedTeam] = await Promise.all([
+        getOrdersBySeller(user.uid),
+        getDeliveryTeamForSeller(user.uid)
+      ]);
       fetchedOrders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
       setOrders(fetchedOrders);
+      setDeliveryTeam(fetchedTeam);
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
     if(user) {
-      fetchOrders();
+      fetchData();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
@@ -313,7 +331,7 @@ export default function OrdersPage() {
                 </TableRow>
               ) : (
                 orders.map((order) => (
-                  <OrderRow key={order.id} order={order} onOrderUpdated={fetchOrders} />
+                  <OrderRow key={order.id} order={order} onOrderUpdated={fetchData} deliveryTeam={deliveryTeam} />
                 ))
               )}
             </TableBody>
