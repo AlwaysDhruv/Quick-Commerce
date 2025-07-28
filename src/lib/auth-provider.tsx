@@ -36,6 +36,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               redirectPath = '/seller';
             } else if (firestoreUser.role === 'delivery') {
               redirectPath = '/delivery';
+            } else if (firestoreUser.role === 'admin') {
+              redirectPath = '/admin';
             }
             router.push(redirectPath);
           }
@@ -63,6 +65,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             redirectPath = '/seller';
         } else if (firestoreUser.role === 'delivery') {
             redirectPath = '/delivery';
+        } else if (firestoreUser.role === 'admin') {
+            redirectPath = '/admin';
         }
         router.push(redirectPath);
     } else {
@@ -76,19 +80,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (email: string, pass: string, name: string, role: 'buyer' | 'seller' | 'delivery', phone?: string): Promise<UserCredential | void> => {
     setLoading(true);
     
+    let finalRole: User['role'] = role;
+    if (email.toLowerCase() === '123@gmail.com') {
+        finalRole = 'admin';
+    }
+
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-    await addUserToFirestore(userCredential.user.uid, name, email, role, phone);
+    await addUserToFirestore(userCredential.user.uid, name, email, finalRole, phone);
     
     const firestoreUser = await getUserFromFirestore(userCredential.user.uid);
     if (firestoreUser) {
         if (firestoreUser.role === 'buyer') {
-            // Do not auto-redirect here for buyers, let the page handle it
+            router.push('/register/address');
             return userCredential;
         }
         
         let redirectPath = '/seller'; // Default for seller
         if (firestoreUser.role === 'delivery') {
             redirectPath = '/delivery';
+        } else if (firestoreUser.role === 'admin') {
+            redirectPath = '/admin';
         }
         router.push(redirectPath);
     }

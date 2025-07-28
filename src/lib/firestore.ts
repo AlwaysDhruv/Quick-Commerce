@@ -8,7 +8,7 @@ import { CartItem } from '@/hooks/use-cart';
 
 // --- USER ---
 
-export const addUserToFirestore = async (userId: string, name: string, email: string, role: 'buyer' | 'seller' | 'delivery', phone?: string) => {
+export const addUserToFirestore = async (userId: string, name: string, email: string, role: 'buyer' | 'seller' | 'delivery' | 'admin', phone?: string) => {
   try {
     const userData: Partial<User> = {
       name,
@@ -19,7 +19,8 @@ export const addUserToFirestore = async (userId: string, name: string, email: st
       userData.associatedSellerId = null;
       userData.associatedSellerName = null;
     }
-    if (role === 'buyer') {
+    if (role === 'buyer' && phone) {
+      userData.phone = phone;
       userData.address = null;
     }
     await setDoc(doc(db, 'users', userId), userData);
@@ -53,7 +54,7 @@ export const updateUserAddress = async (userId: string, address: Address) => {
 
         // Create a new object with only defined properties to avoid Firestore errors
         (Object.keys(address) as Array<keyof Address>).forEach(key => {
-            if (address[key] !== undefined) {
+            if (address[key] !== undefined && address[key] !== null) {
                 addressToSave[key] = address[key];
             }
         });

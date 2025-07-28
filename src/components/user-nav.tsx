@@ -36,6 +36,8 @@ export function UserNav() {
         return "/seller";
       case 'delivery':
         return "/delivery";
+      case 'admin':
+        return "/admin";
       default:
         return "/";
     }
