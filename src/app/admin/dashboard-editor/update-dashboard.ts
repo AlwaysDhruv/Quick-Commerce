@@ -11,7 +11,7 @@ const buyerPagePath = path.join(process.cwd(), 'src', 'app', 'buyer', 'page.tsx'
 interface DashboardConfig {
   heroImageUrl: string;
   carouselImages: string[];
-  categoryImages: string[];
+  categoryImages: { name: string; url: string; hint: string; }[];
 }
 
 // A helper function to perform replacement using a regex
@@ -19,7 +19,17 @@ function replaceImageSource(content: string, hint: string, newUrl: string): stri
   // Regex to find an Image component with a specific data-ai-hint and replace its src
   // It captures the parts before and after the src URL to reconstruct the tag
   const regex = new RegExp(`(<Image[^>]*?data-ai-hint="${hint}"[^>]*?src=")[^"]*("[^>]*>)`);
-  return content.replace(regex, `$1${newUrl}$2`);
+  const match = content.match(regex);
+  if (match) {
+    return content.replace(regex, `$1${newUrl}$2`);
+  }
+  // Fallback for category images which have a different structure in the component
+   const categoryRegex = new RegExp(`(hint:\\s*'${hint}'[^}]*?image:\\s*')[^']*(')`);
+   if (content.match(categoryRegex)){
+       return content.replace(categoryRegex, `$1${newUrl}$2`);
+   }
+  
+  return content;
 }
 
 
@@ -30,24 +40,15 @@ export async function updateDashboard(config: DashboardConfig) {
     // --- Update Carousel Images in buyer/page.tsx ---
     const carouselHints = ["sale banner", "tech gadgets", "home decor", "outdoor adventure", "gourmet food"];
     config.carouselImages.forEach((url, index) => {
-        if (carouselHints[index]) {
+        if (carouselHints[index] && url) {
             buyerPageContent = replaceImageSource(buyerPageContent, carouselHints[index], url);
         }
     });
 
     // --- Update Category Images in buyer/page.tsx ---
-     const categoryHints = ["Apparel", "Electronics", "Home Goods", "Sports & Outdoors", "Food & Grocery"];
-     config.categoryImages.forEach((url, index) => {
-        if (categoryHints[index]) {
-            // Special case for categories as the hint is in the category name passed to the component
-             const categoryRegex = new RegExp(`(<CategoryCards[^}]*categories=\{.*?name: '${categoryHints[index]}'.*?image: ")([^"]*)(".*?\\}\].*?\/>)`);
-             
-             // This replacement is more complex and might not work if the component structure changes.
-             // It finds the CategoryCards component and drills down to the specific category image.
-             // A more robust solution would involve a proper database for this content.
-             // For now, we'll try a regex that is specific to the current structure.
-             const categoryImageRegex = new RegExp(`(name:\\s*'${categoryHints[index]}',\\s*image:\\s*')[^']*(')`);
-             buyerPageContent = buyerPageContent.replace(categoryImageRegex, `$1${url}$2`);
+     config.categoryImages.forEach((cat) => {
+        if (cat.hint && cat.url) {
+            buyerPageContent = replaceImageSource(buyerPageContent, cat.hint, cat.url);
         }
      });
 

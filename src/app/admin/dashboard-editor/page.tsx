@@ -75,7 +75,7 @@ export default function DashboardEditorPage() {
       const dashboardConfig = {
         heroImageUrl,
         carouselImages,
-        categoryImages: categoryImages.map(c => c.url),
+        categoryImages: categoryImages,
       };
       await updateDashboard(dashboardConfig);
       toast({

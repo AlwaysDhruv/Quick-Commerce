@@ -38,11 +38,11 @@ function CategoryCards({ categories }: { categories: Category[] }) {
     
     // Define the categories to be showcased. These names should match exactly what's in Firestore.
     const showcaseCategories = [
-        { name: 'Apparel', image: 'https://placehold.co/300x300.png' },
-        { name: 'Electronics', image: 'https://placehold.co/300x300.png' },
-        { name: 'Home Goods', image: 'https://placehold.co/300x300.png' },
-        { name: 'Sports & Outdoors', image: 'https://placehold.co/300x300.png' },
-        { name: 'Food & Grocery', image: 'https://placehold.co/300x300.png' },
+        { name: 'Apparel', image: 'https://placehold.co/300x300.png', hint: 'Apparel' },
+        { name: 'Electronics', image: 'https://placehold.co/300x300.png', hint: 'Electronics' },
+        { name: 'Home Goods', image: 'https://placehold.co/300x300.png', hint: 'Home Goods' },
+        { name: 'Sports & Outdoors', image: 'https://placehold.co/300x300.png', hint: 'Sports & Outdoors' },
+        { name: 'Food & Grocery', image: 'https://placehold.co/300x300.png', hint: 'Food & Grocery' },
     ];
     
     // Map Firestore categories to the showcase, preserving the dynamic image from Firestore
@@ -53,6 +53,7 @@ function CategoryCards({ categories }: { categories: Category[] }) {
             name: showcaseCat.name,
             // Use Firestore image if available, otherwise fallback to showcase default
             image: firestoreCat?.image || showcaseCat.image,
+            hint: showcaseCat.hint,
         };
     });
 
@@ -72,7 +73,7 @@ function CategoryCards({ categories }: { categories: Category[] }) {
                             alt={category.name}
                             fill
                             className="object-cover transition-transform duration-300 group-hover:scale-110"
-                            data-ai-hint={category.name}
+                            data-ai-hint={category.hint}
                         />
                         <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition-colors flex items-center justify-center p-2">
                             <h3 className="text-white text-center font-semibold text-lg">{category.name}</h3>
