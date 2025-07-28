@@ -4,57 +4,117 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 
-// Define paths to the relevant files
 const buyerPagePath = path.join(process.cwd(), 'src', 'app', 'buyer', 'page.tsx');
 
-// Type definition for the configuration object
+interface CarouselSlide {
+  title: string;
+  description: string;
+  buttonText: string;
+  link: string;
+  imageUrl: string;
+}
+
+interface CategoryImage {
+  name: string;
+  url: string;
+  hint: string;
+}
+
 interface DashboardConfig {
   heroImageUrl: string;
-  carouselImages: string[];
-  categoryImages: { name: string; url: string; hint: string; }[];
+  carouselSlides: CarouselSlide[];
+  categoryImages: CategoryImage[];
 }
 
-// A helper function to perform replacement using a regex
-function replaceImageSource(content: string, hint: string, newUrl: string): string {
-  // Regex to find an Image component with a specific data-ai-hint and replace its src
-  // It captures the parts before and after the src URL to reconstruct the tag
-  const regex = new RegExp(`(<Image[^>]*?data-ai-hint="${hint}"[^>]*?src=")[^"]*("[^>]*>)`);
-  const match = content.match(regex);
-  if (match) {
-    return content.replace(regex, `$1${newUrl}$2`);
-  }
-  // Fallback for category images which have a different structure in the component
-   const categoryRegex = new RegExp(`(hint:\\s*'${hint}'[^}]*?image:\\s*')[^']*(')`);
-   if (content.match(categoryRegex)){
-       return content.replace(categoryRegex, `$1${newUrl}$2`);
-   }
-  
-  return content;
+// Function to generate the <CarouselContent> block dynamically
+function generateCarouselContent(slides: CarouselSlide[]): string {
+    const slideItems = slides.map((slide, index) => {
+        const hint = slide.title.toLowerCase().split(' ').slice(0, 2).join(' ');
+        return `
+                <CarouselItem>
+                  <div className="relative h-[50vh] md:h-[70vh] w-full">
+                    <Image src="${slide.imageUrl}" alt="Slide ${index + 1}" fill className="object-cover" data-ai-hint="${hint}"/>
+                     <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center text-white p-4">
+                        <h2 className="text-4xl md:text-6xl font-headline font-bold">${slide.title}</h2>
+                        <p className="mt-4 text-lg">${slide.description}</p>
+                        <Button asChild size="lg" className="mt-6">
+                            <Link href="${slide.link}">${slide.buttonText}</Link>
+                        </Button>
+                    </div>
+                  </div>
+                </CarouselItem>`;
+    }).join('');
+
+    return `<CarouselContent>${slideItems}
+              </CarouselContent>`;
 }
 
+// Function to generate the CategoryCards component dynamically
+function generateCategoryCards(categories: CategoryImage[]): string {
+    const categoryItems = categories.map(cat => `
+        { name: '${cat.name}', image: '${cat.url}', hint: '${cat.hint}' },`).join('');
+
+    return `function CategoryCards() {
+    const router = useRouter();
+
+    const handleCategoryClick = (categoryName: string) => {
+        router.push(\`/buyer?category=\${encodeURIComponent(categoryName)}\`);
+    }
+    
+    const displayCategories = [${categoryItems}
+    ];
+
+    return (
+        <div className="py-12">
+            <h2 className="font-headline text-3xl font-bold text-center mb-8">Shop by Category</h2>
+             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                {displayCategories.map((category, index) => (
+                    <div
+                        key={index}
+                        onClick={() => handleCategoryClick(category.name)}
+                        className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group border-2 border-transparent hover:border-primary transition-all"
+                    >
+                         <Image
+                            src={category.image}
+                            alt={category.name}
+                            fill
+                            className="object-cover transition-transform duration-300 group-hover:scale-110"
+                            data-ai-hint={category.hint}
+                        />
+                        <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition-colors flex items-center justify-center p-2">
+                            <h3 className="text-white text-center font-semibold text-lg">{category.name}</h3>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}`;
+}
 
 export async function updateDashboard(config: DashboardConfig) {
   try {
     let buyerPageContent = await fs.readFile(buyerPagePath, 'utf-8');
 
-    // --- Update Carousel Images in buyer/page.tsx ---
-    const carouselHints = ["sale banner", "tech gadgets", "home decor", "outdoor adventure", "gourmet food"];
-    config.carouselImages.forEach((url, index) => {
-        if (carouselHints[index] && url) {
-            buyerPageContent = replaceImageSource(buyerPageContent, carouselHints[index], url);
-        }
-    });
+    // --- Dynamically replace the CarouselContent block ---
+    const newCarouselContent = generateCarouselContent(config.carouselSlides);
+    const carouselRegex = /<CarouselContent>[\s\S]*?<\/CarouselContent>/;
+    if (buyerPageContent.match(carouselRegex)) {
+        buyerPageContent = buyerPageContent.replace(carouselRegex, newCarouselContent);
+    } else {
+        // Fallback or error if the block is not found
+        console.warn("CarouselContent block not found in buyer page.");
+    }
 
-    // --- Update Category Images in buyer/page.tsx ---
-     config.categoryImages.forEach((cat) => {
-        if (cat.hint && cat.url) {
-            buyerPageContent = replaceImageSource(buyerPageContent, cat.hint, cat.url);
-        }
-     });
-
-    // The hero image is in src/app/page.tsx, so we handle it separately
-    // Since this function is only for the buyer page, we remove the hero logic from here.
-
+    // --- Dynamically replace the CategoryCards component ---
+    const newCategoryCards = generateCategoryCards(config.categoryImages);
+    const categoryCardsRegex = /function CategoryCards\(\) {[\s\S]*?}/;
+    if (buyerPageContent.match(categoryCardsRegex)) {
+        buyerPageContent = buyerPageContent.replace(categoryCardsRegex, newCategoryCards);
+    } else {
+         console.warn("CategoryCards function not found in buyer page.");
+    }
+    
     await fs.writeFile(buyerPagePath, buyerPageContent, 'utf-8');
     
     return { success: true, message: 'Buyer homepage updated successfully.' };

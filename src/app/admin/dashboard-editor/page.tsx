@@ -68,11 +68,11 @@ const defaultCarouselSlides: CarouselSlide[] = [
 ];
 
 const defaultCategoryImages: CategoryImage[] = [
-    { name: 'Apparel', url: 'https://placehold.co/300x300.png', hint: 'Apparel'},
-    { name: 'Electronics', url: 'https://placehold.co/300x300.png', hint: 'Electronics' },
-    { name: 'Home Goods', url: 'https://placehold.co/300x300.png', hint: 'Home Goods' },
-    { name: 'Sports & Outdoors', url: 'https://placehold.co/300x300.png', hint: 'Sports & Outdoors' },
-    { name: 'Food & Grocery', url: 'https://placehold.co/300x300.png', hint: 'Food & Grocery' }
+    { name: 'Apparel', url: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=2070&auto=format&fit=crop', hint: 'Apparel'},
+    { name: 'Electronics', url: 'https://images.unsplash.com/photo-1550009158-94ae76552485?q=80&w=1887&auto=format&fit=crop', hint: 'Electronics' },
+    { name: 'Home Goods', url: 'https://images.unsplash.com/photo-1556020685-ae41abfc9365?q=80&w=1887&auto=format&fit=crop', hint: 'Home Goods' },
+    { name: 'Sports & Outdoors', url: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=1935&auto=format&fit=crop', hint: 'Sports Outdoors' },
+    { name: 'Food & Grocery', url: 'https://images.unsplash.com/photo-1547592180-85f173990554?q=80&w=2070&auto=format&fit=crop', hint: 'Food Grocery' }
 ];
 
 function ImagePreview({ src, alt, aspect = 'video' }: { src: string, alt: string, aspect?: 'video' | 'square' }) {
@@ -128,11 +128,34 @@ export default function DashboardEditorPage() {
     setCarouselSlides(newSlides);
   }
 
-  const handleCategoryImageChange = (index: number, value: string) => {
+  const handleCategoryImageChange = (index: number, field: keyof CategoryImage, value: string) => {
     const newImages = [...categoryImages];
-    newImages[index].url = value;
+    const oldName = newImages[index].name;
+    newImages[index] = { ...newImages[index], [field]: value };
+
+    if (field === 'name') {
+        newImages[index].hint = value.replace(/&/g, '').replace(/\s+/g, ' ');
+    }
+    
     setCategoryImages(newImages);
   };
+
+  const addCategory = () => {
+    setCategoryImages([
+        ...categoryImages,
+        {
+            name: 'New Category',
+            url: 'https://placehold.co/300x300.png',
+            hint: 'New Category'
+        }
+    ]);
+  }
+
+  const removeCategory = (index: number) => {
+    const newImages = categoryImages.filter((_, i) => i !== index);
+    setCategoryImages(newImages);
+  }
+
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -233,17 +256,37 @@ export default function DashboardEditorPage() {
                     <AccordionTrigger className="text-lg font-semibold">Category Showcase</AccordionTrigger>
                     <AccordionContent className="pt-4 space-y-8">
                        {categoryImages.map((cat, index) => (
-                           <div key={index} className="space-y-2">
-                                <Label htmlFor={`category-image-${index + 1}`}>{cat.name} Image URL</Label>
-                                <Input 
-                                    id={`category-image-${index + 1}`}
-                                    value={cat.url}
-                                    onChange={(e) => handleCategoryImageChange(index, e.target.value)}
-                                    placeholder="https://placehold.co/..."
-                                />
+                           <div key={index} className="space-y-4 p-4 border rounded-lg relative">
+                                <div className='flex justify-between items-center'>
+                                     <h4 className="font-semibold text-lg">Category {index + 1}</h4>
+                                     <Button variant="destructive" size="sm" onClick={() => removeCategory(index)}>
+                                         <Trash2 className="mr-2"/> Remove Category
+                                     </Button>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor={`category-name-${index}`}>Category Name</Label>
+                                    <Input 
+                                        id={`category-name-${index}`}
+                                        value={cat.name}
+                                        onChange={(e) => handleCategoryImageChange(index, 'name', e.target.value)}
+                                        placeholder="e.g. Apparel"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor={`category-image-url-${index}`}>Image URL</Label>
+                                    <Input 
+                                        id={`category-image-url-${index}`}
+                                        value={cat.url}
+                                        onChange={(e) => handleCategoryImageChange(index, 'url', e.target.value)}
+                                        placeholder="https://images.unsplash.com/..."
+                                    />
+                                </div>
                                <ImagePreview src={cat.url} alt={`${cat.name} Preview`} aspect="square"/>
                            </div>
                        ))}
+                       <Button variant="outline" onClick={addCategory}>
+                            <Plus className="mr-2"/> Add New Category
+                       </Button>
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>

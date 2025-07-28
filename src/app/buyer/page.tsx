@@ -27,44 +27,28 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Autoplay from "embla-carousel-autoplay"
 
 
-function CategoryCards({ categories }: { categories: Category[] }) {
+function CategoryCards() {
     const router = useRouter();
-
-    if (categories.length === 0) return null;
 
     const handleCategoryClick = (categoryName: string) => {
         router.push(`/buyer?category=${encodeURIComponent(categoryName)}`);
     }
     
-    // Define the categories to be showcased. These names should match exactly what's in Firestore.
-    const showcaseCategories = [
-        { name: 'Apparel', image: 'https://placehold.co/300x300.png', hint: 'Apparel' },
-        { name: 'Electronics', image: 'https://placehold.co/300x300.png', hint: 'Electronics' },
-        { name: 'Home Goods', image: 'https://placehold.co/300x300.png', hint: 'Home Goods' },
-        { name: 'Sports & Outdoors', image: 'https://placehold.co/300x300.png', hint: 'Sports & Outdoors' },
-        { name: 'Food & Grocery', image: 'https://placehold.co/300x300.png', hint: 'Food & Grocery' },
+    const displayCategories = [
+        { name: 'Apparel', image: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=2070&auto=format&fit=crop', hint: 'Apparel' },
+        { name: 'Electronics', image: 'https://images.unsplash.com/photo-1550009158-94ae76552485?q=80&w=1887&auto=format&fit=crop', hint: 'Electronics' },
+        { name: 'Home Goods', image: 'https://images.unsplash.com/photo-1556020685-ae41abfc9365?q=80&w=1887&auto=format&fit=crop', hint: 'Home Goods' },
+        { name: 'Sports & Outdoors', image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=1935&auto=format&fit=crop', hint: 'Sports Outdoors' },
+        { name: 'Food & Grocery', image: 'https://images.unsplash.com/photo-1547592180-85f173990554?q=80&w=2070&auto=format&fit=crop', hint: 'Food Grocery' },
     ];
-    
-    // Map Firestore categories to the showcase, preserving the dynamic image from Firestore
-    const displayCategories = showcaseCategories.map(showcaseCat => {
-        const firestoreCat = categories.find(c => c.name === showcaseCat.name);
-        return {
-            id: firestoreCat?.id || showcaseCat.name,
-            name: showcaseCat.name,
-            // Use Firestore image if available, otherwise fallback to showcase default
-            image: firestoreCat?.image || showcaseCat.image,
-            hint: showcaseCat.hint,
-        };
-    });
-
 
     return (
         <div className="py-12">
             <h2 className="font-headline text-3xl font-bold text-center mb-8">Shop by Category</h2>
              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                {displayCategories.map(category => (
+                {displayCategories.map((category, index) => (
                     <div
-                        key={category.id}
+                        key={index}
                         onClick={() => handleCategoryClick(category.name)}
                         className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group border-2 border-transparent hover:border-primary transition-all"
                     >
@@ -326,7 +310,7 @@ export default function BuyerPage() {
               <CarouselContent>
                 <CarouselItem>
                   <div className="relative h-[50vh] md:h-[70vh] w-full">
-                    <Image src="https://placehold.co/1600x900.png" alt="Slide 1" fill className="object-cover" data-ai-hint="sale banner"/>
+                    <Image src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop" alt="Slide 1" fill className="object-cover" data-ai-hint="summer styles"/>
                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center text-white p-4">
                         <h2 className="text-4xl md:text-6xl font-headline font-bold">Summer Styles Are Here</h2>
                         <p className="mt-4 text-lg">Discover the latest trends and refresh your wardrobe.</p>
@@ -336,13 +320,13 @@ export default function BuyerPage() {
                     </div>
                   </div>
                 </CarouselItem>
-                 <CarouselItem>
+                <CarouselItem>
                   <div className="relative h-[50vh] md:h-[70vh] w-full">
-                    <Image src="https://placehold.co/1600x900.png" alt="Slide 2" fill className="object-cover" data-ai-hint="tech gadgets"/>
+                    <Image src="https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?q=80&w=1964&auto=format&fit=crop" alt="Slide 2" fill className="object-cover" data-ai-hint="upgrade your"/>
                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center text-white p-4">
                         <h2 className="text-4xl md:text-6xl font-headline font-bold">Upgrade Your Tech</h2>
                         <p className="mt-4 text-lg">Find the latest gadgets and electronics.</p>
-                         <Button asChild size="lg" className="mt-6">
+                        <Button asChild size="lg" className="mt-6">
                             <Link href="/buyer?category=Electronics">Explore Tech</Link>
                         </Button>
                     </div>
@@ -350,36 +334,36 @@ export default function BuyerPage() {
                 </CarouselItem>
                 <CarouselItem>
                   <div className="relative h-[50vh] md:h-[70vh] w-full">
-                    <Image src="https://placehold.co/1600x900.png" alt="Slide 3" fill className="object-cover" data-ai-hint="home decor"/>
+                    <Image src="https://images.unsplash.com/photo-1618220179428-22790b461013?q=80&w=2127&auto=format&fit=crop" alt="Slide 3" fill className="object-cover" data-ai-hint="beautify your"/>
                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center text-white p-4">
                         <h2 className="text-4xl md:text-6xl font-headline font-bold">Beautify Your Home</h2>
                         <p className="mt-4 text-lg">Discover unique pieces for every room.</p>
-                         <Button asChild size="lg" className="mt-6">
-                            <Link href="/buyer?category=Home Goods">Shop Home</Link>
+                        <Button asChild size="lg" className="mt-6">
+                            <Link href="/buyer?category=Home+Goods">Shop Home</Link>
                         </Button>
                     </div>
                   </div>
                 </CarouselItem>
                 <CarouselItem>
                   <div className="relative h-[50vh] md:h-[70vh] w-full">
-                    <Image src="https://placehold.co/1600x900.png" alt="Slide 4" fill className="object-cover" data-ai-hint="outdoor adventure"/>
+                    <Image src="https://images.unsplash.com/photo-1506939391439-366f68e3a435?q=80&w=2070&auto=format&fit=crop" alt="Slide 4" fill className="object-cover" data-ai-hint="adventure awaits"/>
                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center text-white p-4">
                         <h2 className="text-4xl md:text-6xl font-headline font-bold">Adventure Awaits</h2>
                         <p className="mt-4 text-lg">Get equipped for your next outdoor journey.</p>
-                         <Button asChild size="lg" className="mt-6">
-                            <Link href="/buyer?category=Sports & Outdoors">Get Outside</Link>
+                        <Button asChild size="lg" className="mt-6">
+                            <Link href="/buyer?category=Sports+%26+Outdoors">Get Outside</Link>
                         </Button>
                     </div>
                   </div>
                 </CarouselItem>
                 <CarouselItem>
                   <div className="relative h-[50vh] md:h-[70vh] w-full">
-                    <Image src="https://placehold.co/1600x900.png" alt="Slide 5" fill className="object-cover" data-ai-hint="gourmet food"/>
+                    <Image src="https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1974&auto=format&fit=crop" alt="Slide 5" fill className="object-cover" data-ai-hint="taste the"/>
                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center text-white p-4">
                         <h2 className="text-4xl md:text-6xl font-headline font-bold">Taste The Difference</h2>
                         <p className="mt-4 text-lg">Explore gourmet foods and pantry staples.</p>
-                         <Button asChild size="lg" className="mt-6">
-                            <Link href="/buyer?category=Food & Grocery">Shop Gourmet</Link>
+                        <Button asChild size="lg" className="mt-6">
+                            <Link href="/buyer?category=Food+%26+Grocery">Shop Gourmet</Link>
                         </Button>
                     </div>
                   </div>
@@ -391,7 +375,7 @@ export default function BuyerPage() {
         </section>
 
         <section className="container">
-            <CategoryCards categories={allCategories} />
+            <CategoryCards />
         </section>
     </div>
   );
