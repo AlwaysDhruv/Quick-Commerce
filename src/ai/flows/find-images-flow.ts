@@ -91,4 +91,5 @@ const findImagesFlow = ai.defineFlow(
 );
 
 export async function findImages(input: FindImagesInput): Promise<FindImagesOutput> {
-  return findImagesFlow(input
+  return findImagesFlow(input);
+}
