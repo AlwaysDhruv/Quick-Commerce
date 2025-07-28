@@ -310,60 +310,60 @@ export default function BuyerPage() {
               <CarouselContent>
                 <CarouselItem>
                   <div className="relative h-[50vh] md:h-[70vh] w-full">
-                    <Image src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop" alt="Slide 1" fill className="object-cover" data-ai-hint="summer styles"/>
+                    <Image src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop" alt="Summer Styles Are Here" fill className="object-cover" data-ai-hint="summer styles"/>
                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center text-white p-4">
                         <h2 className="text-4xl md:text-6xl font-headline font-bold">Summer Styles Are Here</h2>
                         <p className="mt-4 text-lg">Discover the latest trends and refresh your wardrobe.</p>
                         <Button asChild size="lg" className="mt-6">
-                            <Link href="/buyer?category=Apparel">Shop Now</Link>
+                            <Link href="/buyer?category=Summer+Styles+Are+Here">Shop Now</Link>
                         </Button>
                     </div>
                   </div>
                 </CarouselItem>
                 <CarouselItem>
                   <div className="relative h-[50vh] md:h-[70vh] w-full">
-                    <Image src="https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?q=80&w=1964&auto=format&fit=crop" alt="Slide 2" fill className="object-cover" data-ai-hint="upgrade your"/>
+                    <Image src="https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?q=80&w=1964&auto=format&fit=crop" alt="Upgrade Your Tech" fill className="object-cover" data-ai-hint="upgrade tech"/>
                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center text-white p-4">
                         <h2 className="text-4xl md:text-6xl font-headline font-bold">Upgrade Your Tech</h2>
                         <p className="mt-4 text-lg">Find the latest gadgets and electronics.</p>
                         <Button asChild size="lg" className="mt-6">
-                            <Link href="/buyer?category=Electronics">Explore Tech</Link>
+                            <Link href="/buyer?category=Upgrade+Your+Tech">Explore Tech</Link>
                         </Button>
                     </div>
                   </div>
                 </CarouselItem>
                 <CarouselItem>
                   <div className="relative h-[50vh] md:h-[70vh] w-full">
-                    <Image src="https://images.unsplash.com/photo-1618220179428-22790b461013?q=80&w=2127&auto=format&fit=crop" alt="Slide 3" fill className="object-cover" data-ai-hint="beautify your"/>
+                    <Image src="https://images.unsplash.com/photo-1618220179428-22790b461013?q=80&w=2127&auto=format&fit=crop" alt="Beautify Your Home" fill className="object-cover" data-ai-hint="beautify home"/>
                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center text-white p-4">
                         <h2 className="text-4xl md:text-6xl font-headline font-bold">Beautify Your Home</h2>
                         <p className="mt-4 text-lg">Discover unique pieces for every room.</p>
                         <Button asChild size="lg" className="mt-6">
-                            <Link href="/buyer?category=Home+Goods">Shop Home</Link>
+                            <Link href="/buyer?category=Beautify+Your+Home">Shop Home</Link>
                         </Button>
                     </div>
                   </div>
                 </CarouselItem>
                 <CarouselItem>
                   <div className="relative h-[50vh] md:h-[70vh] w-full">
-                    <Image src="https://images.unsplash.com/photo-1506939391439-366f68e3a435?q=80&w=2070&auto=format&fit=crop" alt="Slide 4" fill className="object-cover" data-ai-hint="adventure awaits"/>
+                    <Image src="https://images.unsplash.com/photo-1506939391439-366f68e3a435?q=80&w=2070&auto=format&fit=crop" alt="Adventure Awaits" fill className="object-cover" data-ai-hint="adventure awaits"/>
                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center text-white p-4">
                         <h2 className="text-4xl md:text-6xl font-headline font-bold">Adventure Awaits</h2>
                         <p className="mt-4 text-lg">Get equipped for your next outdoor journey.</p>
                         <Button asChild size="lg" className="mt-6">
-                            <Link href="/buyer?category=Sports+%26+Outdoors">Get Outside</Link>
+                            <Link href="/buyer?category=Adventure+Awaits">Get Outside</Link>
                         </Button>
                     </div>
                   </div>
                 </CarouselItem>
                 <CarouselItem>
                   <div className="relative h-[50vh] md:h-[70vh] w-full">
-                    <Image src="https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1974&auto=format&fit=crop" alt="Slide 5" fill className="object-cover" data-ai-hint="taste the"/>
+                    <Image src="https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1974&auto=format&fit=crop" alt="Taste The Difference" fill className="object-cover" data-ai-hint="taste difference"/>
                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center text-white p-4">
                         <h2 className="text-4xl md:text-6xl font-headline font-bold">Taste The Difference</h2>
                         <p className="mt-4 text-lg">Explore gourmet foods and pantry staples.</p>
                         <Button asChild size="lg" className="mt-6">
-                            <Link href="/buyer?category=Food+%26+Grocery">Shop Gourmet</Link>
+                            <Link href="/buyer?category=Taste+The+Difference">Shop Gourmet</Link>
                         </Button>
                     </div>
                   </div>

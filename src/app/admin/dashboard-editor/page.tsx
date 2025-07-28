@@ -90,11 +90,11 @@ function ImageSearchDialog({
       const result = await findImages({ query: searchHint });
       setImages(result.images);
       if (result.images.length === 0) {
-        toast({ title: 'No images found for this query.' });
+        toast({ title: 'No images were generated for this query.' });
       }
     } catch (error) {
       console.error(error);
-      toast({ title: 'Error finding images', description: 'The public API key may have reached its limit. Please try again later.', variant: 'destructive' });
+      toast({ title: 'Error generating images', description: 'The AI model failed to generate images. Please try again later.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -114,19 +114,22 @@ function ImageSearchDialog({
       </DialogTrigger>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle>AI Image Search</DialogTitle>
+          <DialogTitle>AI Image Generation</DialogTitle>
           <DialogDescription>
             Showing results for &quot;{searchHint}&quot;. Click an image to select it.
           </DialogDescription>
         </DialogHeader>
         <div className="h-[60vh] relative">
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/50">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
+              <div className="text-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="mt-4 text-muted-foreground">Generating images... (this may take a moment)</p>
+              </div>
             </div>
           )}
           <ScrollArea className="h-full">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-4 p-4">
               {images.map((image, index) => (
                 <div
                   key={index}

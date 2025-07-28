@@ -32,7 +32,7 @@ function generateCarouselContent(slides: CarouselSlide[]): string {
         return `
                 <CarouselItem>
                   <div className="relative h-[50vh] md:h-[70vh] w-full">
-                    <Image src="${slide.imageUrl}" alt="Slide ${index + 1}" fill className="object-cover" data-ai-hint="${hint}"/>
+                    <Image src="${slide.imageUrl}" alt="${slide.title.replace(/"/g, "'")}" fill className="object-cover" data-ai-hint="${hint}"/>
                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-center text-white p-4">
                         <h2 className="text-4xl md:text-6xl font-headline font-bold">${slide.title}</h2>
                         <p className="mt-4 text-lg">${slide.description}</p>

@@ -1,63 +1,29 @@
 
 'use server';
 /**
- * @fileOverview An AI flow for finding images on Unsplash.
+ * @fileOverview An AI flow for generating images with Gemini.
  *
- * - findImages - A function that searches for images based on a query.
+ * - findImages - A function that generates images based on a query.
  */
 
 import { ai } from '@/ai/genkit';
-import { config } from 'dotenv';
 import type { FindImagesInput, FindImagesOutput, FoundImage } from './find-images.types';
 import { FindImagesInputSchema, FindImagesOutputSchema } from './find-images.types';
-config();
 
-const searchUnsplashTool = ai.defineTool(
-  {
-    name: 'searchUnsplashTool',
-    description: 'Searches for images on Unsplash based on a query and returns a list of image URLs and their descriptions.',
-    inputSchema: FindImagesInputSchema,
-    outputSchema: FindImagesOutputSchema,
-  },
-  async ({ query }) => {
-    // Note: In a real app, you should hide your API key, but we'll use an environment variable for this prototype.
-    let apiKey = process.env.UNSPLASH_API_KEY;
-    if (!apiKey) {
-      // This is a public fallback key with a low rate limit.
-      // For real use, get your own key from unsplash.com
-      apiKey = 'lKVd463sTjVp6yFcw96iX1A9e13s2qn2sSS22Xb73C4';
-      console.warn("UNSPLASH_API_KEY not set, using public fallback key.");
-    }
-    
-    // Using node-fetch because native fetch is not consistently available in all server-side Node environments
-    const fetch = (await import('node-fetch')).default;
-    const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=12&orientation=landscape`;
-    
-    try {
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Client-ID ${apiKey}`
-        }
-      });
-      const data: any = await response.json();
+async function generateImage(query: string): Promise<FoundImage> {
+    const { media } = await ai.generate({
+        model: 'googleai/gemini-2.0-flash-preview-image-generation',
+        prompt: `A high-quality, professional marketing photo of: ${query}`,
+        config: {
+        responseModalities: ['TEXT', 'IMAGE'],
+        },
+    });
 
-      if (!response.ok || !data.results) {
-        throw new Error(`Unsplash API error: ${data.errors?.[0] || 'Unknown error'}`);
-      }
-
-      const images: FoundImage[] = data.results.map((img: any) => ({
-        url: img.urls.regular,
-        alt: img.alt_description || query,
-      }));
-
-      return { images };
-    } catch (error) {
-      console.error('Error in searchUnsplashTool:', error);
-      // Return empty array on failure to prevent crashing the main flow.
-      return { images: [] };
-    }
-  }
-);
+    return {
+        url: media.url,
+        alt: query,
+    };
+}
 
 
 const findImagesFlow = ai.defineFlow(
@@ -66,9 +32,17 @@ const findImagesFlow = ai.defineFlow(
     inputSchema: FindImagesInputSchema,
     outputSchema: FindImagesOutputSchema,
   },
-  async (input) => {
-    // Directly call the tool for reliable image searching
-    return await searchUnsplashTool(input);
+  async ({ query }) => {
+    try {
+        // Generate a few images in parallel to give the user a selection
+        const imagePromises = Array(4).fill(null).map(() => generateImage(query));
+        const images = await Promise.all(imagePromises);
+        return { images };
+    } catch (error) {
+        console.error('Error in findImagesFlow:', error);
+        // Return empty array on failure to prevent crashing the main flow.
+        return { images: [] };
+    }
   }
 );
 
