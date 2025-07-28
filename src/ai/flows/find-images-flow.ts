@@ -21,12 +21,12 @@ const searchUnsplashTool = ai.defineTool(
   },
   async ({ query }) => {
     // Note: In a real app, you should hide your API key, but we'll use an environment variable for this prototype.
-    const apiKey = process.env.UNSPLASH_API_KEY;
+    let apiKey = process.env.UNSPLASH_API_KEY;
     if (!apiKey) {
-      // This is a fallback public key with a very low rate limit.
+      // This is a public fallback key with a low rate limit.
       // For real use, get your own key from unsplash.com
+      apiKey = 'lKVd463sTjVp6yFcw96iX1A9e13s2qn2sSS22Xb73C4';
       console.warn("UNSPLASH_API_KEY not set, using public fallback key.");
-      return { images: [] };
     }
     
     // Using node-fetch because native fetch is not consistently available in all server-side Node environments

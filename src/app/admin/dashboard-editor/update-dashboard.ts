@@ -51,7 +51,7 @@ function generateCarouselContent(slides: CarouselSlide[]): string {
 // Function to generate the CategoryCards component dynamically
 function generateCategoryCards(categories: CategoryImage[]): string {
     const categoryItems = categories.map(cat => `
-        { name: '${cat.name}', image: '${cat.url}', hint: '${cat.hint}' },`).join('');
+        { name: '${cat.name.replace(/'/g, "\\'")}', image: '${cat.url}', hint: '${cat.hint.replace(/'/g, "\\'")}' },`).join('');
 
     return `function CategoryCards() {
     const router = useRouter();
@@ -120,4 +120,8 @@ export async function updateDashboard(config: DashboardConfig) {
   } catch (error) {
     console.error('Failed to update dashboard:', error);
     if (error instanceof Error) {
-        throw new Error
+        throw new Error(`Failed to update buyer page: ${error.message}`);
+    }
+    throw new Error('An unknown error occurred while updating the dashboard.');
+  }
+}

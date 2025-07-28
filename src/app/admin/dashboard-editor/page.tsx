@@ -94,7 +94,7 @@ function ImageSearchDialog({
       }
     } catch (error) {
       console.error(error);
-      toast({ title: 'Error finding images', variant: 'destructive' });
+      toast({ title: 'Error finding images', description: 'The public API key may have reached its limit. Please try again later.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
