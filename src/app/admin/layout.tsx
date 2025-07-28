@@ -4,10 +4,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Palette } from 'lucide-react';
+import { Home, Palette, Image as ImageIcon } from 'lucide-react';
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: Home },
+  { href: '/admin/dashboard-editor', label: 'Dashboard Editor', icon: ImageIcon },
   { href: '/admin/theme', label: 'Theme Customizer', icon: Palette },
 ];
 
