@@ -4,10 +4,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Palette, Image as ImageIcon } from 'lucide-react';
+import { Palette, Image as ImageIcon } from 'lucide-react';
 
 const navItems = [
-  { href: '/admin', label: 'Dashboard', icon: Home },
   { href: '/admin/dashboard-editor', label: 'Dashboard Editor', icon: ImageIcon },
   { href: '/admin/theme', label: 'Theme Customizer', icon: Palette },
 ];
@@ -20,7 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className="hidden md:flex flex-col gap-6">
         <nav className="flex flex-col gap-2">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}

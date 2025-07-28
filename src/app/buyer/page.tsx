@@ -35,22 +35,44 @@ function CategoryCards({ categories }: { categories: Category[] }) {
     const handleCategoryClick = (categoryName: string) => {
         router.push(`/buyer?category=${encodeURIComponent(categoryName)}`);
     }
+    
+    // Define the categories to be showcased. These names should match exactly what's in Firestore.
+    const showcaseCategories = [
+        { name: 'Apparel', image: 'https://placehold.co/300x300.png' },
+        { name: 'Electronics', image: 'https://placehold.co/300x300.png' },
+        { name: 'Home Goods', image: 'https://placehold.co/300x300.png' },
+        { name: 'Sports & Outdoors', image: 'https://placehold.co/300x300.png' },
+        { name: 'Food & Grocery', image: 'https://placehold.co/300x300.png' },
+    ];
+    
+    // Map Firestore categories to the showcase, preserving the dynamic image from Firestore
+    const displayCategories = showcaseCategories.map(showcaseCat => {
+        const firestoreCat = categories.find(c => c.name === showcaseCat.name);
+        return {
+            id: firestoreCat?.id || showcaseCat.name,
+            name: showcaseCat.name,
+            // Use Firestore image if available, otherwise fallback to showcase default
+            image: firestoreCat?.image || showcaseCat.image,
+        };
+    });
+
 
     return (
         <div className="py-12">
             <h2 className="font-headline text-3xl font-bold text-center mb-8">Shop by Category</h2>
              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                {categories.map(category => (
+                {displayCategories.map(category => (
                     <div
                         key={category.id}
                         onClick={() => handleCategoryClick(category.name)}
                         className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group border-2 border-transparent hover:border-primary transition-all"
                     >
                          <Image
-                            src={category.image || 'https://placehold.co/300x300.png'}
+                            src={category.image}
                             alt={category.name}
                             fill
                             className="object-cover transition-transform duration-300 group-hover:scale-110"
+                            data-ai-hint={category.name}
                         />
                         <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition-colors flex items-center justify-center p-2">
                             <h3 className="text-white text-center font-semibold text-lg">{category.name}</h3>
