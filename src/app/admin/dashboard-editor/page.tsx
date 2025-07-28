@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,7 +11,8 @@ import { Loader2, Save, Plus, Trash2, Wand2 } from 'lucide-react';
 import { updateDashboard } from './update-dashboard';
 import Image from 'next/image';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { findImages, type FoundImage } from '@/ai/flows/find-images-flow';
+import { findImages } from '@/ai/flows/find-images-flow';
+import { type FoundImage } from '@/ai/flows/find-images.types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -204,7 +206,6 @@ export default function DashboardEditorPage() {
 
   const handleCategoryImageChange = (index: number, field: keyof CategoryImage, value: string) => {
     const newImages = [...categoryImages];
-    const oldName = newImages[index].name;
     newImages[index] = { ...newImages[index], [field]: value };
 
     if (field === 'name') {
