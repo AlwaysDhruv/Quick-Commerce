@@ -33,7 +33,7 @@ export default function Home() {
             </div>
             <div className="relative">
               <Image
-                src="https://placehold.co/600x400.png"
+                src="https://images.unsplash.com/photo-1587721500213-5a0398bf8a39?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8c2hvcGluZyUyMGNhcnR8ZW58MHx8fHwxNzUzNjg5MDc3fDA&ixlib=rb-4.1.0&q=80&w=1080"
                 alt="SwiftShopper showcase"
                 width={600}
                 height={400}
