@@ -10,7 +10,6 @@ interface CarouselSlide {
   title: string;
   description: string;
   buttonText: string;
-  link: string;
   imageUrl: string;
 }
 
@@ -21,7 +20,6 @@ interface CategoryImage {
 }
 
 interface DashboardConfig {
-  heroImageUrl: string;
   carouselSlides: CarouselSlide[];
   categoryImages: CategoryImage[];
 }
@@ -30,6 +28,7 @@ interface DashboardConfig {
 function generateCarouselContent(slides: CarouselSlide[]): string {
     const slideItems = slides.map((slide, index) => {
         const hint = slide.title.toLowerCase().split(' ').slice(0, 2).join(' ');
+        const link = `/buyer?category=${encodeURIComponent(slide.title.replace(/ /g, '+'))}`
         return `
                 <CarouselItem>
                   <div className="relative h-[50vh] md:h-[70vh] w-full">
@@ -38,7 +37,7 @@ function generateCarouselContent(slides: CarouselSlide[]): string {
                         <h2 className="text-4xl md:text-6xl font-headline font-bold">${slide.title}</h2>
                         <p className="mt-4 text-lg">${slide.description}</p>
                         <Button asChild size="lg" className="mt-6">
-                            <Link href="${slide.link}">${slide.buttonText}</Link>
+                            <Link href="${link}">${slide.buttonText}</Link>
                         </Button>
                     </div>
                   </div>
@@ -121,8 +120,4 @@ export async function updateDashboard(config: DashboardConfig) {
   } catch (error) {
     console.error('Failed to update dashboard:', error);
     if (error instanceof Error) {
-        throw new Error(`Failed to update page files: ${error.message}`);
-    }
-    throw new Error('An unknown error occurred while updating the dashboard.');
-  }
-}
+        throw new Error

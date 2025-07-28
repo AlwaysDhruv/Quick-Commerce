@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -7,17 +6,19 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Save, Plus, Trash2, Wand2 } from 'lucide-react';
 import { updateDashboard } from './update-dashboard';
 import Image from 'next/image';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { findImages, type FoundImage } from '@/ai/flows/find-images-flow';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // --- Type Definitions ---
 interface CarouselSlide {
     title: string;
     description: string;
     buttonText: string;
-    link: string;
     imageUrl: string;
 }
 interface CategoryImage {
@@ -27,42 +28,35 @@ interface CategoryImage {
 }
 
 // --- Default Values ---
-const defaultHeroImage = "https://images.unsplash.com/photo-1587721500213-5a0398bf8a39?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8c2hvcGluZyUyMGNhcnR8ZW58MHx8fHwxNzUzNjg5MDc3fDA&ixlib=rb-4.1.0&q=80&w=1080";
-
 const defaultCarouselSlides: CarouselSlide[] = [
     {
         title: 'Summer Styles Are Here',
         description: 'Discover the latest trends and refresh your wardrobe.',
         buttonText: 'Shop Now',
-        link: '/buyer?category=Apparel',
         imageUrl: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop'
     },
     {
         title: 'Upgrade Your Tech',
         description: 'Find the latest gadgets and electronics.',
         buttonText: 'Explore Tech',
-        link: '/buyer?category=Electronics',
         imageUrl: 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?q=80&w=1964&auto=format&fit=crop'
     },
     {
         title: 'Beautify Your Home',
         description: 'Discover unique pieces for every room.',
         buttonText: 'Shop Home',
-        link: '/buyer?category=Home+Goods',
         imageUrl: 'https://images.unsplash.com/photo-1618220179428-22790b461013?q=80&w=2127&auto=format&fit=crop'
     },
     {
         title: 'Adventure Awaits',
         description: 'Get equipped for your next outdoor journey.',
         buttonText: 'Get Outside',
-        link: '/buyer?category=Sports+%26+Outdoors',
         imageUrl: 'https://images.unsplash.com/photo-1506939391439-366f68e3a435?q=80&w=2070&auto=format&fit=crop'
     },
     {
         title: 'Taste The Difference',
         description: 'Explore gourmet foods and pantry staples.',
         buttonText: 'Shop Gourmet',
-        link: '/buyer?category=Food+%26+Grocery',
         imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1974&auto=format&fit=crop'
     },
 ];
@@ -75,6 +69,88 @@ const defaultCategoryImages: CategoryImage[] = [
     { name: 'Food & Grocery', url: 'https://images.unsplash.com/photo-1547592180-85f173990554?q=80&w=2070&auto=format&fit=crop', hint: 'Food Grocery' }
 ];
 
+function ImageSearchDialog({
+  searchHint,
+  onImageSelect,
+}: {
+  searchHint: string;
+  onImageSelect: (imageUrl: string) => void;
+}) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [images, setImages] = useState<FoundImage[]>([]);
+
+  const handleSearch = async () => {
+    setIsLoading(true);
+    setImages([]);
+    try {
+      const result = await findImages({ query: searchHint });
+      setImages(result.images);
+      if (result.images.length === 0) {
+        toast({ title: 'No images found for this query.' });
+      }
+    } catch (error) {
+      console.error(error);
+      toast({ title: 'Error finding images', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSelect = (imageUrl: string) => {
+    onImageSelect(imageUrl);
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" onClick={handleSearch}>
+          <Wand2 className="mr-2" /> Find with AI
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>AI Image Search</DialogTitle>
+          <DialogDescription>
+            Showing results for &quot;{searchHint}&quot;. Click an image to select it.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="h-[60vh] relative">
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/50">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+          )}
+          <ScrollArea className="h-full">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+              {images.map((image, index) => (
+                <div
+                  key={index}
+                  className="relative aspect-video rounded-lg overflow-hidden cursor-pointer group"
+                  onClick={() => handleSelect(image.url)}
+                >
+                  <Image
+                    src={image.url}
+                    alt={image.alt}
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Plus className="h-8 w-8 text-white" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
 function ImagePreview({ src, alt, aspect = 'video' }: { src: string, alt: string, aspect?: 'video' | 'square' }) {
     const aspectClass = aspect === 'video' ? 'aspect-video' : 'aspect-square';
     return (
@@ -85,7 +161,7 @@ function ImagePreview({ src, alt, aspect = 'video' }: { src: string, alt: string
                     alt={alt}
                     fill
                     className="object-cover"
-                    key={src} // Force re-render on src change
+                    key={src}
                 />
             ) : (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -100,7 +176,6 @@ export default function DashboardEditorPage() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   
-  const [heroImageUrl, setHeroImageUrl] = useState(defaultHeroImage);
   const [carouselSlides, setCarouselSlides] = useState<CarouselSlide[]>(defaultCarouselSlides);
   const [categoryImages, setCategoryImages] = useState<CategoryImage[]>(defaultCategoryImages);
 
@@ -117,7 +192,6 @@ export default function DashboardEditorPage() {
             title: 'New Slide',
             description: 'A brief description for your new slide.',
             buttonText: 'Learn More',
-            link: '/',
             imageUrl: 'https://placehold.co/1600x900.png'
         }
     ]);
@@ -161,7 +235,6 @@ export default function DashboardEditorPage() {
     setIsSaving(true);
     try {
       const dashboardConfig = {
-        heroImageUrl,
         carouselSlides,
         categoryImages,
       };
@@ -195,22 +268,7 @@ export default function DashboardEditorPage() {
             <CardDescription>Update the images displayed on the main buyer homepage.</CardDescription>
         </CardHeader>
         <CardContent>
-            <Accordion type="multiple" defaultValue={['hero']} className="w-full">
-                <AccordionItem value="hero">
-                    <AccordionTrigger className="text-lg font-semibold">Hero Section</AccordionTrigger>
-                    <AccordionContent className="pt-4 space-y-4">
-                        <div>
-                            <Label htmlFor="hero-image-url">Landing Page Hero Image URL</Label>
-                            <Input 
-                                id="hero-image-url"
-                                value={heroImageUrl}
-                                onChange={(e) => setHeroImageUrl(e.target.value)}
-                                placeholder="https://images.unsplash.com/..."
-                            />
-                        </div>
-                        <ImagePreview src={heroImageUrl} alt="Hero Image Preview" />
-                    </AccordionContent>
-                </AccordionItem>
+            <Accordion type="multiple" defaultValue={['carousel']} className="w-full">
                 <AccordionItem value="carousel">
                     <AccordionTrigger className="text-lg font-semibold">Carousel Slides</AccordionTrigger>
                     <AccordionContent className="pt-4 space-y-8">
@@ -235,14 +293,13 @@ export default function DashboardEditorPage() {
                                         <Label htmlFor={`carousel-btn-text-${index}`}>Button Text</Label>
                                         <Input id={`carousel-btn-text-${index}`} value={slide.buttonText} onChange={(e) => handleCarouselChange(index, 'buttonText', e.target.value)} />
                                     </div>
-                                     <div className="space-y-2">
-                                        <Label htmlFor={`carousel-link-${index}`}>Button Link</Label>
-                                        <Input id={`carousel-link-${index}`} value={slide.link} onChange={(e) => handleCarouselChange(index, 'link', e.target.value)} />
-                                    </div>
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor={`carousel-image-${index}`}>Image URL</Label>
-                                    <Input id={`carousel-image-${index}`} value={slide.imageUrl} onChange={(e) => handleCarouselChange(index, 'imageUrl', e.target.value)} />
+                                    <div className="flex items-center gap-2">
+                                        <Input id={`carousel-image-${index}`} value={slide.imageUrl} onChange={(e) => handleCarouselChange(index, 'imageUrl', e.target.value)} />
+                                        <ImageSearchDialog searchHint={slide.title} onImageSelect={(url) => handleCarouselChange(index, 'imageUrl', url)} />
+                                    </div>
                                 </div>
                                 <ImagePreview src={slide.imageUrl} alt={`Slide ${index + 1} Preview`} />
                            </div>
@@ -274,12 +331,15 @@ export default function DashboardEditorPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor={`category-image-url-${index}`}>Image URL</Label>
-                                    <Input 
-                                        id={`category-image-url-${index}`}
-                                        value={cat.url}
-                                        onChange={(e) => handleCategoryImageChange(index, 'url', e.target.value)}
-                                        placeholder="https://images.unsplash.com/..."
-                                    />
+                                     <div className="flex items-center gap-2">
+                                        <Input 
+                                            id={`category-image-url-${index}`}
+                                            value={cat.url}
+                                            onChange={(e) => handleCategoryImageChange(index, 'url', e.target.value)}
+                                            placeholder="https://images.unsplash.com/..."
+                                        />
+                                        <ImageSearchDialog searchHint={cat.hint} onImageSelect={(url) => handleCategoryImageChange(index, 'url', url)} />
+                                    </div>
                                 </div>
                                <ImagePreview src={cat.url} alt={`${cat.name} Preview`} aspect="square"/>
                            </div>
